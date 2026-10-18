@@ -574,6 +574,25 @@ function restoreArchivedOperation(array $args): array {
     }finally{flock($lock,LOCK_UN);fclose($lock);}
 }
 
+function connectedSitesReadOnly(): array {
+    $configFile=dirname(__DIR__).'/console/config.php';
+    if (!is_file($configFile) || !is_readable($configFile)) {
+        throw new RuntimeException('Pairing registry configuration unavailable');
+    }
+    $config=require $configFile;
+    $dbPath=is_array($config)?($config['database_path']??null):null;
+    if (!is_string($dbPath) || !is_file($dbPath) || !is_readable($dbPath)) {
+        throw new RuntimeException('Pairing registry unavailable');
+    }
+    $db=new PDO('sqlite:file:'.$dbPath.'?mode=ro',null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
+    $rows=$db->query('SELECT site_name,site_url,connected_at,last_seen FROM connected_sites ORDER BY site_name,site_url')->fetchAll(PDO::FETCH_ASSOC);
+    return ['count'=>count($rows),'sites'=>array_map(static function(array $row):array {
+        return ['name'=>$row['site_name'],'url'=>$row['site_url'],
+            'connected_at'=>$row['connected_at'],'last_seen'=>$row['last_seen'],
+            'status'=>$row['last_seen']===null?'not_yet_seen':'registered'];
+    },$rows),'status_note'=>'registered means paired, not a live connectivity check'];
+}
+
 function serverInventory(): array {
     $root=dirname(__DIR__);
     $folders=['admin','api','assets','mcp','releases'];
@@ -910,6 +929,7 @@ if ($path === '/mcp/' || $path === '/mcp') {
             'plugin' => ['type' => 'string', 'description' => 'Optional plugin slug, e.g. grafika-volby']]];
         $response['result'] = ['tools' => [
             ['name'=>'preview_release_cleanup','description'=>'Read-only preview of older ZIP releases beyond per-plugin retention. Never deletes files.','inputSchema'=>['type'=>'object','properties'=>['keep_latest'=>['type'=>'integer','minimum'=>3,'maximum'=>100],'protected_versions'=>['type'=>'array','items'=>['type'=>'string']]]]],
+            ['name'=>'list_connected_sites','description'=>'Read-only paired WordPress site names, URLs and timestamps; no credentials or live status.','inputSchema'=>$empty],
             ['name'=>'server_inventory','description'=>'Read-only metadata inventory of public web root and selected folders; never returns file contents.','inputSchema'=>$empty],
             ['name'=>'preview_plugin_archive','description'=>'Preview ZIP releases to archive for one plugin, including a confirmation SHA256. keep_latest=0 archives all versions.','inputSchema'=>['type'=>'object','properties'=>['plugin'=>['type'=>'string'],'keep_latest'=>['type'=>'integer','minimum'=>0,'maximum'=>100]],'required'=>['plugin']]],
             ['name'=>'archive_plugin_releases','description'=>'After explicit user approval, move precisely previewed releases to a private reversible archive. Never permanently deletes.','inputSchema'=>['type'=>'object','properties'=>['plugin'=>['type'=>'string'],'keep_latest'=>['type'=>'integer','minimum'=>0,'maximum'=>100],'plan_sha256'=>['type'=>'string'],'confirm'=>['type'=>'boolean']],'required'=>['plugin','keep_latest','plan_sha256','confirm']]],
@@ -1001,6 +1021,8 @@ if ($path === '/mcp/' || $path === '/mcp') {
             try {$result=validationUpdate($args);}catch(Throwable $e){mcpFailure($response,$e->getMessage());}
         } elseif ($tool === 'inspect_release_validation') {
             try {$result=validationInspectRelease($args);}catch(Throwable $e){mcpFailure($response,$e->getMessage());}
+        } elseif ($tool === 'list_connected_sites') {
+            try {$result=connectedSitesReadOnly();}catch(Throwable $e){mcpFailure($response,$e->getMessage());}
         } elseif ($tool === 'server_inventory') {
             $result=serverInventory();
         } elseif ($tool === 'preview_plugin_archive') {
