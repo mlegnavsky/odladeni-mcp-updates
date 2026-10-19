@@ -1697,6 +1697,9 @@ if ($path === '/mcp/' || $path === '/mcp') {
             $filename=$slug.'-v'.$version.'-'.substr($hash,0,12).'.zip';
             $target=dirname(__DIR__).'/releases/'.$filename;
             if (!is_file($target) && !rename($tmp,$target)) {@unlink($tmp);mcpFailure($response,'Storage failed');}
+            if (!chmod($target,0644)) { if (is_file($tmp)) unlink($tmp); mcpFailure($response,'Cannot publish ZIP permissions'); }
+            clearstatcache(true,$target);
+            if ((fileperms($target) & 0444) !== 0444) mcpFailure($response,'Published ZIP is not publicly readable');
             if (is_file($tmp)) unlink($tmp);
             $result=['plugin'=>$slug,'name'=>$pluginName,'version'=>$version,'sha256'=>$hash,'download_url'=>$origin.'/releases/'.$filename];
         } else {
