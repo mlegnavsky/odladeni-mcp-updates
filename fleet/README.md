@@ -1,31 +1,43 @@
-# Central fleet diagnostics — deployed 2026-10-19
+# Odladění fleet — own plugin management
 
-Production: https://plaginy.odladeni.cz/mcp/
+## Deployed server components (2026-10-19)
+- MCP index.php SHA-256: bbf20e45e00c5a52235d79d3453194d96df96c2bdf5e8962084e031b15d26e50. Immutable source commit 0525ee70946f466a53ffc02d811f0f214201f0f3, mcp-management-20261019.txt.
+- OAuth-protected fleet_plugin_manage and fleet_upgrade_bridge tools, plus existing read-only fleet diagnostics.
+- Console route /console/?action=plugin_manager&site=URL, linked from the site's Pluginy tab. Existing Google admin/superadmin session and CSRF protection remain required.
+- Shared authenticated transport installed at assets/fleet-management.php. Exact paired registry targets, HTTPS/443, public DNS validation, cURL destination pinning, TLS verification, no proxy/redirects, bounded response and timeout.
 
-The runtime implementation is embedded in index.php to allow atomic single-file deployment and rollback. OdladeniFleetReadOnly.php remains the original design reference and is not loaded by production.
+## WordPress package
+Hlavní instalace 2.4.54, immutable ZIP:
+https://plaginy.odladeni.cz/releases/prvotni-instalace-v2.4.54-2666ffa1283f.zip
 
-## Implemented
-- OAuth-protected fleet_list_sites, fleet_site_diagnostics (site_url) and fleet_diagnostics tools.
-- Existing list_connected_sites accepts include_diagnostics=true for the same live fleet report, preserving its registry-only default.
-- Existing SQLite paired-site registry and per-site HMAC timestamp/nonce protocol; no new credentials.
-- Strict registered URL selection, HTTPS/443 only, public DNS validation and cURL destination pinning, no proxy or redirects, TLS verification, 8-second per-site timeout and 2 MiB response limit.
-- Independent failures, 48-second fleet budget before starting another site (DNS resolution itself is subject to system resolver timing).
-- Only GET diagnostics; no WordPress mutations. Only selected scalar plugin metadata is returned.
+SHA-256: 2666ffa1283f67cef05611fdd2f93af64975b7de75914451bd4a9380e09f9edd
 
-## Verified deployment
-- Source baseline SHA-256: 56e6679542051f7ec54e9b003444ed5f9c82fa2b3d1dd10ef35dd8dc1128f770
-- Deployed SHA-256: 3ea511433e80b86f348af799ef3c9074935d2b984171aa90f554747d3cfe8222
-- Immutable source commit: 5091fdbc4268eb439c7548a01eec4a401710d5a3, file mcp-fleet-20261019.txt
-- Server PHP 8.4.26 TOKEN_PARSE check passed; this is syntax validation, not a test suite.
-- deploy_apply confirmed exact new SHA and saved previous version as backup. Trace c0685c732132e91e.
-- Live include_diagnostics test before deployment returned registry only; after deployment returned four successful signed diagnostic responses, including plugin versions, active state, update availability and auto_update flags.
-- connection_diagnostics confirmed ready, authenticated, expected deployed SHA and backup SHA. Trace 1e44898ee02d9064.
-- No plugin packages were published or installed, and no WordPress settings were changed.
+Public manifest: https://plaginy.odladeni.cz/api/manifest.php?plugin=prvotni-instalace
+The manifest now includes the actual package SHA-256, correct bridge name and PHP 8.0 minimum. The reference ZIP includes README.md, ODLADENI.md, CHANGELOG.md and consistent manifest.json / odladeni.json / header / internal version.
 
-## Limits
-Standalone new tool discovery in a refreshed client, unauthorized requests, hostile DNS/redirect/oversize fixtures, partial-failure fixtures and rollback were not exercised in this deployment. No local PHP executable or automated PHP test suite was available. Server version remains 2.6.1; identify this deployment by SHA-256.
+## Management API
+fleet_plugin_manage accepts site_url, action, exact plugin basename and stable request_id. Actions: activate, deactivate, auto_update, install, update, delete. auto_update requires boolean enabled; delete requires explicit confirm_delete. Install source: wordpress, odladeni or zip; source zip requires HTTPS URL and SHA-256. Regular updates use the installed WordPress updater, including premium updater packages. New installs stay inactive. Upgrade preserves active state.
 
-## Deploy / recovery
-Use verified SHA-256 stage -> syntax check -> compare-and-swap apply -> live diagnostics. Use deploy_rollback for recovery and verify server status and SHA afterward. Never replace current production with an older reference source.
+POST /wp-json/odladeni-bridge/v2/plugin-manage uses the existing paired key with HMAC over POST, route, timestamp, nonce and SHA-256 of the exact JSON body. Atomic replay protection, persistent request receipts, request-id collision rejection and an exclusive operation lock are implemented in odladeni-plugin-manager.php. Keys never leave the services.
 
-Write operations and fleet plugin upgrades are outside phase 1.
+The bridge cannot deactivate/delete itself. Remote mutations reject multisite. WordPress file-modification restrictions are respected. Delete removes inactive plugin files after an outside-web-root ZIP backup; it deliberately retains database settings and does not run uninstall hooks. File backups do not cover database migrations. Automatic restoration is not implemented; the backup ID enables administrator recovery. Updates/deletes refuse to proceed without a private backup directory and ZIP support.
+
+ZIP checks cover SHA-256 for own/custom packages, basename/root identity, version where supplied, entry traversal, symlinks, 25 MiB download, 128 MiB expanded size and 10,000-entry limits. Native/cron Odladění package downloads use the same integrity checks. Other registered WordPress updater sources retain native HTTPS/WordPress trust.
+
+## Verification and remaining deployment step
+- All PHP files in the final plugin package passed local PHP 8.3 syntax checks; server validator accepted release 2.4.54 including PHP lint and integrity.
+- Regression checks passed for HMAC/body tampering, replay, activation/deactivation, idempotency/conflicts, invalid paths, bridge protection, active deletion rejection and native auto-update flags.
+- Package tests passed for valid ZIP, traversal, wrong root/main/header/version, SHA mismatch, native repository integrity hook, exact backup contents and symlink rejection. The test's scratch-directory reuse issue was fixed by using random per-run directories; no product change was required.
+- MCP stage/apply and postdeploy authenticated health checks passed; previous MCP SHA 3ea511433e80b86f348af799ef3c9074935d2b984171aa90f554747d3cfe8222 remains the backup.
+- Existing live signed diagnostics still succeeded on all four paired sites after deployment. WordPress detected the bridge update.
+- Package 2.4.54 was published, but the first WordPress bridge upgrade and live mutation checks had NOT been performed at this checkpoint. No site plugin was changed or deleted. The browser requires a Google administrator login and the current chat tool catalog has not refreshed the new management tools.
+- End-to-end install/update/delete, cron execution, rollback, native plugin-details dialog and hostile-network fixtures remain unverified. Local tests use WordPress API stubs and real ZIP/filesystem fixtures, not a full WordPress installation.
+
+## Continue
+Refresh the connected MCP tool catalog, then fleet_upgrade_bridge on the explicitly selected pilot site (hyperkostka.cz) with confirm=true. Read fresh diagnostics and confirm 2.4.54 active. Use fleet_plugin_manage to perform the already requested Angie deactivation with a new stable request ID, then verify its inactive state. Alternatively use the own console manager after the administrator signs in. Do not route through WPVibe or run mutations through read-only tools.
+
+## Tests
+php tests/plugin-manager-test.php "$PWD/fleet/odladeni-plugin-manager.php"
+php tests/package-test.php "$PWD/fleet/odladeni-plugin-manager.php"
+
+PHP ctype and zip extensions are needed by the respective tests. OdladeniFleetReadOnly.php is the original design reference; production runtime is embedded atomically in MCP index.php. No credentials or site diagnostic dumps belong in this repository.
