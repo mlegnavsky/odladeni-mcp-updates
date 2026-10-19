@@ -26,10 +26,7 @@ jobs:
               response=raw.recv(2048)
               if not response.startswith(b"234"):
                   raise RuntimeError("FTP server did not accept AUTH TLS")
-              with ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT).wrap_socket(raw,server_hostname=host,do_handshake_on_connect=False) as tls:
-                  tls.context.check_hostname=False
-                  tls.context.verify_mode=ssl.CERT_NONE
-                  tls.do_handshake()
+              with ssl._create_unverified_context().wrap_socket(raw,server_hostname=host) as tls:
                   der=tls.getpeercert(binary_form=True)
           if not der: raise RuntimeError("Server sent no certificate")
           with tempfile.NamedTemporaryFile(suffix=".der") as f:
