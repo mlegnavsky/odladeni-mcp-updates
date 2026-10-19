@@ -342,7 +342,7 @@ function serverReadRoot(): string {
 function serverAllowedFiles(): array {
     $root=serverReadRoot();
     // Explicitly permit the console controller source, never its configuration or data.
-    $names=['index.php', 'console/index.php', 'api/upload.php'];
+    $names=['index.php', 'console/index.php', 'api/upload.php', 'mcp/index.php'];
     foreach (['assets','css','js'] as $folder) {
         $base=$root.'/'.$folder;
         if (!is_dir($base) || is_link($base)) continue;
@@ -572,6 +572,105 @@ function restoreArchivedOperation(array $args): array {
         bridgeLog('restore_archived_operation',['operation_id'=>$plan['operation_id'],'plugin'=>$plan['plugin'],'count'=>count($moved)]);
         return ['status'=>'restored','operation_id'=>$plan['operation_id'],'plugin'=>$plan['plugin'],'restored_count'=>count($moved)];
     }finally{flock($lock,LOCK_UN);fclose($lock);}
+}
+
+// Fleet phase 1: read-only, OAuth-gated by the existing MCP dispatcher.
+function fleetSiteDiagnostics(string $site): array {
+    $registered=connectedSitesReadOnly();
+    if (!in_array($site,array_column($registered['sites'],'url'),true)) {
+        throw new InvalidArgumentException('Target is not in the paired-site registry');
+    }
+    $u=parse_url($site);
+    if (!is_array($u)||($u['scheme']??'')!=='https'||empty($u['host'])
+        ||isset($u['user'])||isset($u['pass'])||isset($u['query'])||isset($u['fragment'])
+        ||(isset($u['port'])&&$u['port']!==443)) throw new RuntimeException('Unsupported paired origin');
+    $host=strtolower($u['host']);
+    if (!preg_match('/^[a-z0-9][a-z0-9.-]*[a-z0-9]$/D',$host)||filter_var($host,FILTER_VALIDATE_IP)) {
+        throw new RuntimeException('Invalid paired hostname');
+    }
+    $records=dns_get_record($host,DNS_A|DNS_AAAA);
+    $ips=[];
+    foreach(is_array($records)?$records:[] as $record) {
+        $ip=$record['ip']??$record['ipv6']??null;
+        if ($ip===null) continue;
+        if (!filter_var($ip,FILTER_VALIDATE_IP,FILTER_FLAG_NO_PRIV_RANGE|FILTER_FLAG_NO_RES_RANGE)) {
+            throw new RuntimeException('Non-public paired destination rejected');
+        }
+        $ips[]=$ip;
+    }
+    if (!$ips) throw new RuntimeException('Public destination DNS unavailable');
+    $config=require dirname(__DIR__).'/console/config.php';
+    $db=new PDO('sqlite:'.$config['database_path'],null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
+    $db->exec('PRAGMA query_only = ON');
+    $query=$db->prepare('SELECT shared_key FROM connected_sites WHERE site_url=?');
+    $query->execute([$site]);$key=$query->fetchColumn();
+    if (!is_string($key)||$key==='') throw new RuntimeException('Paired authentication unavailable');
+    $path='/wp-json/odladeni-bridge/v1/diagnostics';
+    $time=(string)time();$nonce=bin2hex(random_bytes(12));
+    $signature=hash_hmac('sha256',"GET\n".$path."\n".$time."\n".$nonce,$key);
+    unset($key,$config,$query,$db);
+    $body='';$overflow=false;
+    $ch=curl_init(rtrim($site,'/').$path);
+    if ($ch===false) throw new RuntimeException('HTTPS transport unavailable');
+    $pin=str_contains($ips[0],':')?'['.$ips[0].']':$ips[0];
+    curl_setopt_array($ch,[CURLOPT_TIMEOUT=>8,CURLOPT_CONNECTTIMEOUT=>4,
+        CURLOPT_FOLLOWLOCATION=>false,CURLOPT_MAXREDIRS=>0,CURLOPT_PROXY=>'',
+        CURLOPT_PROTOCOLS=>CURLPROTO_HTTPS,CURLOPT_SSL_VERIFYPEER=>true,CURLOPT_SSL_VERIFYHOST=>2,
+        CURLOPT_RESOLVE=>[$host.':443:'.$pin],
+        CURLOPT_HTTPHEADER=>['Accept: application/json','X-Odladeni-Time: '.$time,
+            'X-Odladeni-Nonce: '.$nonce,'X-Odladeni-Signature: '.$signature],
+        CURLOPT_WRITEFUNCTION=>static function($curl,string $chunk) use (&$body,&$overflow):int {
+            if(strlen($body)+strlen($chunk)>2097152){$overflow=true;return 0;}
+            $body.=$chunk;return strlen($chunk);
+        }]);
+    $ok=curl_exec($ch);$http=(int)curl_getinfo($ch,CURLINFO_RESPONSE_CODE);curl_close($ch);
+    if ($overflow) throw new RuntimeException('Diagnostic response exceeds limit');
+    if ($ok===false||$http!==200) throw new RuntimeException('Remote diagnostics unavailable (HTTP '.$http.')');
+    $data=json_decode($body,true,64);
+    if (!is_array($data)||($data['ok']??false)!==true||!is_array($data['plugins']??null)) {
+        throw new RuntimeException('Invalid remote diagnostics response');
+    }
+    $plugins=[];
+    foreach($data['plugins'] as $plugin) {
+        if (!is_array($plugin)) continue;
+        $clean=[];
+        foreach(['slug','file','plugin','basename','name','version','active','update_available','new_version','latest_version','auto_update','auto_updates','auto_update_enabled'] as $field) {
+            if(array_key_exists($field,$plugin)&&(is_scalar($plugin[$field])||$plugin[$field]===null))$clean[$field]=$plugin[$field];
+        }
+        $plugins[]=$clean;
+    }
+    return ['site'=>$site,'ok'=>true,'wordpress_version'=>is_string($data['wordpress_version']??null)?$data['wordpress_version']:null,
+        'php_version'=>is_string($data['php_version']??null)?$data['php_version']:null,
+        'plugins'=>$plugins,'checked_at'=>gmdate('c')];
+}
+function fleetDiagnostics(): array {
+    $sites=connectedSitesReadOnly();$results=[];$started=microtime(true);
+    foreach($sites['sites'] as $site) {
+        if(microtime(true)-$started>48){$results[]=['site'=>$site['url'],'ok'=>false,'error'=>'Fleet time budget reached'];continue;}
+        try{$results[]=fleetSiteDiagnostics($site['url']);}
+        catch(Throwable $e){$results[]=['site'=>$site['url'],'ok'=>false,'error'=>$e->getMessage()];}
+    }
+    return ['count'=>count($results),'results'=>$results,'read_only'=>true];
+}
+
+function connectedSitesReadOnly(): array {
+    $configFile=dirname(__DIR__).'/console/config.php';
+    if (!is_file($configFile) || !is_readable($configFile)) {
+        throw new RuntimeException('Pairing registry configuration unavailable');
+    }
+    $config=require $configFile;
+    $dbPath=is_array($config)?($config['database_path']??null):null;
+    if (!is_string($dbPath) || !is_file($dbPath) || !is_readable($dbPath)) {
+        throw new RuntimeException('Pairing registry unavailable');
+    }
+    $db=new PDO('sqlite:'.$dbPath,null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
+    $db->exec('PRAGMA query_only = ON');
+    $rows=$db->query('SELECT site_name,site_url,connected_at,last_seen FROM connected_sites ORDER BY site_name,site_url')->fetchAll(PDO::FETCH_ASSOC);
+    return ['count'=>count($rows),'sites'=>array_map(static function(array $row):array {
+        return ['name'=>$row['site_name'],'url'=>$row['site_url'],
+            'connected_at'=>$row['connected_at'],'last_seen'=>$row['last_seen'],
+            'status'=>$row['last_seen']===null?'not_yet_seen':'registered'];
+    },$rows),'status_note'=>'registered means paired, not a live connectivity check'];
 }
 
 function serverInventory(): array {
@@ -910,6 +1009,10 @@ if ($path === '/mcp/' || $path === '/mcp') {
             'plugin' => ['type' => 'string', 'description' => 'Optional plugin slug, e.g. grafika-volby']]];
         $response['result'] = ['tools' => [
             ['name'=>'preview_release_cleanup','description'=>'Read-only preview of older ZIP releases beyond per-plugin retention. Never deletes files.','inputSchema'=>['type'=>'object','properties'=>['keep_latest'=>['type'=>'integer','minimum'=>3,'maximum'=>100],'protected_versions'=>['type'=>'array','items'=>['type'=>'string']]]]],
+            ['name'=>'fleet_list_sites','description'=>'Read-only paired WordPress registry; no credentials.','inputSchema'=>$empty],
+            ['name'=>'fleet_site_diagnostics','description'=>'Signed read-only diagnostics for one paired HTTPS WordPress site.','inputSchema'=>['type'=>'object','properties'=>['site_url'=>['type'=>'string']],'required'=>['site_url']]],
+            ['name'=>'fleet_diagnostics','description'=>'Signed read-only diagnostics for paired WordPress sites; independent failures and bounded duration.','inputSchema'=>$empty],
+            ['name'=>'list_connected_sites','description'=>'Paired WordPress registry, optionally with signed live diagnostics.','inputSchema'=>['type'=>'object','properties'=>['include_diagnostics'=>['type'=>'boolean']]]],
             ['name'=>'server_inventory','description'=>'Read-only metadata inventory of public web root and selected folders; never returns file contents.','inputSchema'=>$empty],
             ['name'=>'preview_plugin_archive','description'=>'Preview ZIP releases to archive for one plugin, including a confirmation SHA256. keep_latest=0 archives all versions.','inputSchema'=>['type'=>'object','properties'=>['plugin'=>['type'=>'string'],'keep_latest'=>['type'=>'integer','minimum'=>0,'maximum'=>100]],'required'=>['plugin']]],
             ['name'=>'archive_plugin_releases','description'=>'After explicit user approval, move precisely previewed releases to a private reversible archive. Never permanently deletes.','inputSchema'=>['type'=>'object','properties'=>['plugin'=>['type'=>'string'],'keep_latest'=>['type'=>'integer','minimum'=>0,'maximum'=>100],'plan_sha256'=>['type'=>'string'],'confirm'=>['type'=>'boolean']],'required'=>['plugin','keep_latest','plan_sha256','confirm']]],
@@ -1001,6 +1104,12 @@ if ($path === '/mcp/' || $path === '/mcp') {
             try {$result=validationUpdate($args);}catch(Throwable $e){mcpFailure($response,$e->getMessage());}
         } elseif ($tool === 'inspect_release_validation') {
             try {$result=validationInspectRelease($args);}catch(Throwable $e){mcpFailure($response,$e->getMessage());}
+        } elseif (in_array($tool,['fleet_list_sites','fleet_site_diagnostics','fleet_diagnostics','list_connected_sites'],true)) {
+            try {
+                if ($tool==='fleet_site_diagnostics') $result=fleetSiteDiagnostics((string)($args['site_url']??''));
+                elseif ($tool==='fleet_diagnostics'||($tool==='list_connected_sites'&&($args['include_diagnostics']??false)===true)) $result=fleetDiagnostics();
+                else $result=connectedSitesReadOnly();
+            } catch(Throwable $e){mcpFailure($response,'Fleet request failed: '.$e->getMessage());}
         } elseif ($tool === 'server_inventory') {
             $result=serverInventory();
         } elseif ($tool === 'preview_plugin_archive') {
