@@ -1,30 +1,31 @@
-# Central fleet management — integration plan
+# Central fleet diagnostics — deployed 2026-10-19
 
-Branch: `feature/central-fleet-management`
+Production: https://plaginy.odladeni.cz/mcp/
 
-## Existing facts
-- The Odladění MCP exposes `list_connected_sites`, but that tool is registry-only.
-- The first-party plugin release `prvotni-instalace` 2.4.51 includes `odladeni-remote-diagnostics.php`.
-- Its `GET /wp-json/odladeni-bridge/v1/diagnostics` endpoint reports WordPress/PHP versions, installed plugins, active state, update availability, and WordPress auto-update flag.
-- The endpoint uses per-site shared-key HMAC with timestamp and nonce replay protection.
-- The web console already displays a Hyperkostka overview, but that does not establish that the MCP runtime can issue authenticated site calls.
+The runtime implementation is embedded in index.php to allow atomic single-file deployment and rollback. OdladeniFleetReadOnly.php remains the original design reference and is not loaded by production.
 
-## Required server-side wiring (not implemented yet)
-1. Identify and reuse the console's existing authenticated per-site request function. Do not create new shared secrets or expose them to ChatGPT.
-2. Implement registry callback by reading the existing paired-site SQLite database with the current schema. Never accept arbitrary URLs as request targets.
-3. Implement authenticated transport callback using the existing site's HMAC signing and nonce logic. Reject redirects, non-HTTPS destinations, private IP targets, and origin mismatches. Timeouts and bounded responses required.
-4. Instantiate `OdladeniFleetReadOnly` only *after* MCP OAuth authorization.
-5. Register MCP tools `fleet_list_sites`, `fleet_site_diagnostics`, `fleet_diagnostics` and expose their JSON schemas in `tools/list`. Route calls in `tools/call`.
-6. Test first with Hyperkostka, then all four currently paired sites; verify plugin 2.4.51 diagnostic response and auto-update flags.
-7. Add mutation tools in a separate reviewed change: plan/dry-run, per-site permissions, explicit user confirmation, per-site backup/rollback, idempotency keys, audit log, and bounded concurrency for up to 70 sites.
+## Implemented
+- OAuth-protected fleet_list_sites, fleet_site_diagnostics (site_url) and fleet_diagnostics tools.
+- Existing list_connected_sites accepts include_diagnostics=true for the same live fleet report, preserving its registry-only default.
+- Existing SQLite paired-site registry and per-site HMAC timestamp/nonce protocol; no new credentials.
+- Strict registered URL selection, HTTPS/443 only, public DNS validation and cURL destination pinning, no proxy or redirects, TLS verification, 8-second per-site timeout and 2 MiB response limit.
+- Independent failures, 48-second fleet budget before starting another site (DNS resolution itself is subject to system resolver timing).
+- Only GET diagnostics; no WordPress mutations. Only selected scalar plugin metadata is returned.
 
-## Security
-Never commit API credentials, HMAC secrets, OAuth tokens, site database, or diagnostic responses containing sensitive data to this public repository. No write operations are present in phase 1.
+## Verified deployment
+- Source baseline SHA-256: 56e6679542051f7ec54e9b003444ed5f9c82fa2b3d1dd10ef35dd8dc1128f770
+- Deployed SHA-256: 3ea511433e80b86f348af799ef3c9074935d2b984171aa90f554747d3cfe8222
+- Immutable source commit: 5091fdbc4268eb439c7548a01eec4a401710d5a3, file mcp-fleet-20261019.txt
+- Server PHP 8.4.26 TOKEN_PARSE check passed; this is syntax validation, not a test suite.
+- deploy_apply confirmed exact new SHA and saved previous version as backup. Trace c0685c732132e91e.
+- Live include_diagnostics test before deployment returned registry only; after deployment returned four successful signed diagnostic responses, including plugin versions, active state, update availability and auto_update flags.
+- connection_diagnostics confirmed ready, authenticated, expected deployed SHA and backup SHA. Trace 1e44898ee02d9064.
+- No plugin packages were published or installed, and no WordPress settings were changed.
 
-## Acceptance checks
-- Unknown/unpaired URL rejected.
-- No authorization -> no fleet tools.
-- All registry sites included without manual ChatGPT reconnection.
-- One unreachable site does not prevent other diagnostics.
-- Auto-update flag read from WordPress per plugin, not inferred from whether the plugin is active.
-- Zero WordPress writes during phase 1.
+## Limits
+Standalone new tool discovery in a refreshed client, unauthorized requests, hostile DNS/redirect/oversize fixtures, partial-failure fixtures and rollback were not exercised in this deployment. No local PHP executable or automated PHP test suite was available. Server version remains 2.6.1; identify this deployment by SHA-256.
+
+## Deploy / recovery
+Use verified SHA-256 stage -> syntax check -> compare-and-swap apply -> live diagnostics. Use deploy_rollback for recovery and verify server status and SHA afterward. Never replace current production with an older reference source.
+
+Write operations and fleet plugin upgrades are outside phase 1.
