@@ -94,7 +94,7 @@ def run():
         except Exception:
             print("DEPLOY FAILED: attempting rollback")
             try:
-                if installed or (before is not None and TEST_FILE not in names(ftp)):
+                if installed or (before is not None and (TEST_FILE not in names(ftp) or sha(read(ftp, TEST_FILE)) != actual)) or (before is None and TEST_FILE in names(ftp) and stage not in names(ftp)):
                     if TEST_FILE in names(ftp):
                         ftp.delete(TEST_FILE)
                     if backup_created and backup in names(ftp):
