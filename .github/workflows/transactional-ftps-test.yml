@@ -1,0 +1,42 @@
+name: Transactional Odladeni FTPS test
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "verify (read-only) or deploy (test TXT only)"
+        type: choice
+        options:
+          - verify
+          - deploy
+        default: verify
+        required: true
+      expected_remote_sha256:
+        description: "ABSENT for first deploy; exact 64-char SHA256 for replacement"
+        type: string
+        default: ABSENT
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: odladeni-transactional-ftps
+  cancel-in-progress: false
+
+jobs:
+  transaction:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax check
+        run: python3 -m py_compile scripts/transactional_ftps_deploy.py
+      - name: Transactional FTPS test
+        env:
+          WEB_FTP_HOST: ${{ secrets.WEB_FTP_HOST }}
+          WEB_FTP_USER: ${{ secrets.WEB_FTP_USER }}
+          WEB_FTP_PASSWORD: ${{ secrets.WEB_FTP_PASSWORD }}
+          DEPLOY_MODE: ${{ inputs.mode }}
+          EXPECTED_REMOTE_SHA256: ${{ inputs.expected_remote_sha256 }}
+        run: python3 scripts/transactional_ftps_deploy.py
