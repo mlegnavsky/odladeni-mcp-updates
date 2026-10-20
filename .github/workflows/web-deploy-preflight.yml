@@ -1,0 +1,57 @@
+name: Odladeni WEB deployment preflight
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: odladeni-web-deploy-preflight
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Validate encrypted FTPS access and deployment boundaries
+        env:
+          FTP_HOST: ${{ secrets.WEB_FTP_HOST }}
+          FTP_USER: ${{ secrets.WEB_FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.WEB_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import ftplib
+          import os
+          import ssl
+          import sys
+          host = os.getenv('FTP_HOST', '').strip()
+          user = os.getenv('FTP_USER', '')
+          password = os.getenv('FTP_PASSWORD', '')
+          if not all((host, user, password)):
+              sys.exit('FAIL: WEB FTPS secrets missing')
+          ftp = ftplib.FTP_TLS(context=ssl.create_default_context(), timeout=20)
+          try:
+              ftp.connect(host, 21)
+              ftp.auth()
+              ftp.login(user, password)
+              ftp.prot_p()
+              root = ftp.pwd()
+              names = [x.rsplit('/', 1)[-1] for x in ftp.nlst()]
+              print('PASS: encrypted FTPS session')
+              print('FTPS account root:', root)
+              print('Visible top-level entries:', ', '.join(sorted(names)[:30]))
+              if 'kits' not in names:
+                  sys.exit('FAIL: expected kits test directory absent')
+              ftp.cwd('kits')
+              print('PASS: isolated test directory accessible')
+              print('READ-ONLY PREFLIGHT COMPLETE')
+              print('PRODUCTION DEPLOYMENT DISABLED: no upload, delete, or rename operations')
+          finally:
+              try:
+                  ftp.quit()
+              except Exception:
+                  ftp.close()
+          PY
