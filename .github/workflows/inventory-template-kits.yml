@@ -1,0 +1,25 @@
+name: Inventory and publish Elementor kits
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/publish_template_inventory.py
+      - dashboard/template-kits.html
+      - .github/workflows/inventory-template-kits.yml
+permissions:
+  contents: read
+concurrency:
+  group: odladeni-template-inventory
+  cancel-in-progress: false
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan remote ZIPs and publish verified catalog
+        env:
+          FTP_HOST: ${{ secrets.WEB_FTP_HOST }}
+          FTP_USER: ${{ secrets.WEB_FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.WEB_FTP_PASSWORD }}
+        run: python3 scripts/publish_template_inventory.py
