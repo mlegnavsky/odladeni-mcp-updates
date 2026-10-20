@@ -1,0 +1,58 @@
+name: Publish Odladeni template catalog
+on:
+  push:
+    paths:
+      - dashboard/template-kits.html
+      - dashboard/catalog-release.txt
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: odladeni-template-catalog-publish
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish isolated catalog via verified FTPS
+        env:
+          FTP_HOST: ${{ secrets.WEB_FTP_HOST }}
+          FTP_USER: ${{ secrets.WEB_FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.WEB_FTP_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import ftplib, hashlib, io, os, ssl
+          from pathlib import Path
+          source=Path('dashboard/template-kits.html').read_bytes()
+          assert source.startswith(b'<!doctype html>'), 'Unexpected HTML'
+          ftp=ftplib.FTP_TLS(context=ssl.create_default_context(),timeout=25)
+          ftp.connect(os.environ['FTP_HOST'],21)
+          ftp.login(os.environ['FTP_USER'],os.environ['FTP_PASSWORD'])
+          ftp.prot_p()
+          ftp.cwd('kits')
+          directory='odladeni-template-catalog-20261020'
+          try:
+              ftp.mkd(directory)
+          except ftplib.error_perm:
+              ftp.cwd(directory)
+              existing=[]
+              try: ftp.retrbinary('RETR index.html',existing.append)
+              except ftplib.error_perm: pass
+              if existing:
+                  if hashlib.sha256(b''.join(existing)).digest()!=hashlib.sha256(source).digest():
+                      raise RuntimeError('Existing catalog differs; refusing overwrite')
+                  print('Catalog already published and identical')
+                  ftp.quit()
+                  raise SystemExit(0)
+              ftp.cwd('..')
+          ftp.cwd(directory)
+          ftp.storbinary('STOR index.html',io.BytesIO(source))
+          chunks=[]
+          ftp.retrbinary('RETR index.html',chunks.append)
+          if b''.join(chunks)!=source:
+              raise RuntimeError('Readback mismatch')
+          print('Published and verified kits/'+directory+'/index.html sha256='+hashlib.sha256(source).hexdigest())
+          ftp.quit()
+          PY
