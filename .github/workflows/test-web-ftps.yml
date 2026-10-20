@@ -1,0 +1,52 @@
+
+name: Test WEB Odladeni FTPS
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-web-ftps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify encrypted FTPS connection
+        env:
+          FTP_HOST: ${{ secrets.WEB_FTP_HOST }}
+          FTP_USER: ${{ secrets.WEB_FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.WEB_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, ssl, ftplib
+
+          host = os.environ["FTP_HOST"].strip()
+          user = os.environ["FTP_USER"]
+          password = os.environ["FTP_PASSWORD"]
+
+          if not all((host, user, password)):
+              raise SystemExit("Missing WEB FTP secrets")
+
+          ftp = ftplib.FTP_TLS(
+              context=ssl.create_default_context(),
+              timeout=20
+          )
+
+          try:
+              ftp.connect(host, 21)
+              ftp.auth()
+              ftp.login(user, password)
+              ftp.prot_p()
+
+              print("Secure FTPS connection successful")
+              print("Root directory:", ftp.pwd())
+              print("Files:", ftp.nlst()[:30])
+              print("Read-only test completed")
+          finally:
+              try:
+                  ftp.quit()
+              except Exception:
+                  ftp.close()
+          PY
