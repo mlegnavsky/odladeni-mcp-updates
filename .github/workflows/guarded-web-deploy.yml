@@ -1,0 +1,34 @@
+name: Guarded WEB Odladeni test deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "verify is read-only; deploy creates one isolated test TXT"
+        type: choice
+        options:
+          - verify
+          - deploy
+        required: true
+        default: verify
+
+permissions:
+  contents: read
+
+concurrency:
+  group: guarded-web-odladeni-deployment
+  cancel-in-progress: false
+
+jobs:
+  guarded-deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Guarded FTPS test deployment
+        env:
+          WEB_FTP_HOST: ${{ secrets.WEB_FTP_HOST }}
+          WEB_FTP_USER: ${{ secrets.WEB_FTP_USER }}
+          WEB_FTP_PASSWORD: ${{ secrets.WEB_FTP_PASSWORD }}
+          DEPLOY_MODE: ${{ inputs.mode }}
+        run: python3 scripts/guarded_ftps_deploy.py
