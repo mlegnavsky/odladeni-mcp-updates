@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inventory ZIP kits over FTPS; publish JSON and dashboard with backup and read-back."""
+"""Inventory ZIP kits over FTPS; publish JSON and dashboard with backup and read-back.\nTriggered for the first production inventory.\n"""
 import ftplib, io, os, ssl, json, hashlib, zipfile, collections, posixpath
 from pathlib import Path
 
