@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Odladění · Knihovna šablon</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:#e8edf5;background:#0b1220}*{box-sizing:border-box}body{margin:0}header{padding:32px max(24px,calc((100vw - 1240px)/2));background:linear-gradient(110deg,#17243b,#0b1220);border-bottom:1px solid #2b3b52}h1{font-size:clamp(27px,4vw,42px);margin:8px 0}h2{font-size:19px}.muted{color:#a2b1c6}.wrap{max-width:1240px;margin:auto;padding:28px 24px}.pill{display:inline-block;padding:6px 10px;border:1px solid #344660;border-radius:999px;color:#b9d0ef;font-size:12px}nav{display:flex;gap:12px;flex-wrap:wrap;margin:24px 0}.metric{flex:1;min-width:160px;background:#152238;border:1px solid #2c3b53;padding:20px;border-radius:16px}.metric strong{display:block;font-size:32px;margin-top:6px}.controls{display:flex;flex-wrap:wrap;gap:12px;margin:20px 0}input,select,button{border:1px solid #3a4d69;background:#18263c;color:#fff;padding:12px;border-radius:10px;font:inherit}input[type=search]{flex:1;min-width:240px}button{cursor:pointer;background:#3e76ec;border-color:#3e76ec}button.secondary{background:#1a2a42;border-color:#3b4b63}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:16px}.card{background:#152238;border:1px solid #2d3d54;border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px}.card h2{margin:0}.tag{font-size:12px;padding:5px 8px;border-radius:7px;background:#273b55}.tags{display:flex;gap:6px;flex-wrap:wrap}.status{font-size:12px;font-weight:700}.pending{color:#f9c46b}.ok{color:#71d4a1}.bad{color:#ff9292}.details{margin-top:auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;color:#a2b1c6;font-size:13px}.details b{display:block;color:#f0f5ff;font-size:18px}.notice{background:#17243b;border:1px solid #365071;border-radius:12px;padding:16px;margin:20px 0}.empty{padding:40px;text-align:center;color:#b5c1d3}.foot{font-size:13px;color:#91a4bc;margin-top:28px}a{color:#8bb7ff}label.upload{display:inline-block;background:#1a2a42;border:1px solid #3b4b63;border-radius:10px;padding:12px;cursor:pointer}label.upload input{display:none}
+</style></head><body>
+<header><span class="pill">ODLADĚNÍ / DESIGN SYSTEM</span><h1>Knihovna Elementor šablon</h1><p class="muted">Přehled template kitů, jejich widgetů, závislostí a připravenosti pro vývoj webů.</p></header>
+<main class="wrap">
+<nav id="metrics"></nav>
+<div class="notice" id="notice">Zatím zobrazuji pouze referenční záznamy. Pro kompletní inventuru nahrajte JSON vygenerovaný analyzátorem ZIP archivů. Neověřené kity nejsou označené jako kompatibilní.</div>
+<div class="controls"><input id="q" type="search" placeholder="Hledat název, widget nebo kategorii…" aria-label="Hledat šablony"><select id="status" aria-label="Filtrovat stav"><option value="">Všechny stavy</option><option value="untested">Neověřené</option><option value="ready">Připravené</option><option value="blocked">Vyžadují úpravy</option></select><select id="sort" aria-label="Seřadit"><option value="name">Podle názvu</option><option value="widgets">Nejvíce widgetů</option><option value="templates">Nejvíce šablon</option></select><label class="upload">Nahrát katalog JSON<input type="file" id="file" accept=".json,application/json"></label><button class="secondary" id="reset">Referenční záznamy</button></div>
+<p class="muted" id="count"></p><section class="grid" id="cards" aria-live="polite"></section>
+<p class="foot">Import JSON probíhá pouze ve Vašem prohlížeči. Stránka neodesílá soubory na server. Výsledek indexace neznamená ověřenou kompatibilitu s Elementor Free.</p>
+</main>
+<script>
+const reference=[
+{archive:"aho-agency-business-elementor-template-kit.zip",title:"Aho Agency & Business",category:"Agentury / firmy",candidate_templates:19,widget_total:581,compatibility:"untested",note:"Referenční údaj z předchozí analýzy; vyžaduje kontrolu Elementor Pro."},
+{archive:"coestra-political-party-candidate-elementor-template-kit.zip",title:"Coestra Political Party & Candidate",category:"Politika / kandidáti",candidate_templates:15,widget_total:328,compatibility:"untested",note:"Referenční údaj z předchozí analýzy; závislosti je nutné ověřit."}
+];
+let data=reference.slice();
+const $=id=>document.getElementById(id);
+const escape=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const countWidgets=x=>Number(x.widget_total??Object.values(x.widget_counts||{}).reduce((a,b)=>a+Number(b||0),0));
+const state=x=>x.error?"blocked":x.compatibility==="ready"?"ready":x.compatibility==="blocked"?"blocked":"untested";
+const label={untested:"Neověřeno",ready:"Připraveno",blocked:"Vyžaduje úpravy"};
+function render(){
+const q=$("q").value.trim().toLocaleLowerCase("cs"),st=$("status").value,sort=$("sort").value;
+let rows=data.filter(x=>(!st||state(x)===st)&&[x.title,x.archive,x.category,x.note,Object.keys(x.widget_counts||{}).join(" ")].join(" ").toLocaleLowerCase("cs").includes(q));
+rows.sort((a,b)=>sort==="widgets"?countWidgets(b)-countWidgets(a):sort==="templates"?(b.candidate_templates||0)-(a.candidate_templates||0):String(a.title||a.archive).localeCompare(String(b.title||b.archive),"cs"));
+$("metrics").innerHTML=[["Archivů v katalogu",data.length],["Neověřených",data.filter(x=>state(x)==="untested").length],["Připravených",data.filter(x=>state(x)==="ready").length],["Vyžadují úpravy",data.filter(x=>state(x)==="blocked").length]].map(([a,b])=>'<div class="metric"><span class="muted">'+escape(a)+'</span><strong>'+b+'</strong></div>').join("");
+$("count").textContent="Zobrazeno "+rows.length+" z "+data.length+" kitů";
+$("cards").innerHTML=rows.map(x=>{let tags=Object.keys(x.widget_counts||{}).sort((a,b)=>x.widget_counts[b]-x.widget_counts[a]).slice(0,4);return '<article class="card"><div class="status '+(state(x)==="ready"?"ok":state(x)==="blocked"?"bad":"pending")+'">● '+label[state(x)]+'</div><h2>'+escape(x.title||x.archive)+'</h2><div class="muted">'+escape(x.category||x.archive)+'</div><div class="tags">'+tags.map(t=>'<span class="tag">'+escape(t)+'</span>').join("")+'</div><div class="details"><div>Šablony<b>'+escape(x.candidate_templates??"—")+'</b></div><div>Widgety<b>'+countWidgets(x)+'</b></div><div>Kontejnery<b>'+escape(x.containers??"—")+'</b></div><div>JSON soubory<b>'+escape(x.json_files??"—")+'</b></div></div><p class="muted">'+escape(x.note||x.error||"Kompatibilita zatím nebyla ověřena.")+'</p><small class="muted">SHA-256: '+escape(x.sha256?x.sha256.slice(0,16)+"…":"neuvedeno")+'</small></article>'}).join("")||'<div class="empty">Žádné šablony neodpovídají filtru.</div>';
+}
+$("file").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;try{const obj=JSON.parse(await f.text());if(!Array.isArray(obj)||obj.some(x=>!x||typeof x!=="object"||typeof x.archive!=="string"))throw Error("Očekávám pole objektů s názvem archive.");data=obj;$("notice").textContent="Načten katalog: "+f.name+". Stav kompatibility je neověřený, dokud neproběhne importní test.";render()}catch(err){alert("Nelze načíst katalog: "+err.message)}});
+$("reset").onclick=()=>{data=reference.slice();$("file").value="";$("notice").textContent="Zobrazuji referenční záznamy. Pro kompletní inventuru nahrajte JSON z analyzátoru.";render()};
+["q","status","sort"].forEach(id=>$(id).addEventListener("input",render));render();
+</script></body></html>
