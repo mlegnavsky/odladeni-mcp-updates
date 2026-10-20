@@ -1,0 +1,72 @@
+name: Safe WEB Odladeni FTPS deploy test
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type TEST to deploy only the isolated test TXT file'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: safe-web-ftps-test
+  cancel-in-progress: false
+
+jobs:
+  test-safe-deploy:
+    if: ${{ inputs.confirm == 'TEST' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Secure FTPS upload and rollback test
+        env:
+          FTP_HOST: ${{ secrets.WEB_FTP_HOST }}
+          FTP_USER: ${{ secrets.WEB_FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.WEB_FTP_PASSWORD }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, ssl, ftplib, hashlib, io
+          host = os.environ['FTP_HOST'].strip()
+          user = os.environ['FTP_USER']
+          password = os.environ['FTP_PASSWORD']
+          if not all((host, user, password)):
+              raise SystemExit('Missing FTPS credentials')
+          # Only the designated test directory is eligible for writing.
+          directory = 'kits'
+          filename = 'odladeni-github-ftps-safe-test-20261020.txt'
+          payload = b'ODLADENI GITHUB FTPS SAFE TEST\n'
+          ftp = ftplib.FTP_TLS(context=ssl.create_default_context(), timeout=20)
+          try:
+              ftp.connect(host, 21)
+              ftp.auth()
+              ftp.login(user, password)
+              ftp.prot_p()
+              ftp.cwd(directory)
+              # Never overwrite an existing remote file.
+              if filename in [x.rsplit('/',1)[-1] for x in ftp.nlst()]:
+                  raise SystemExit('Test file already exists; refusing overwrite')
+              try:
+                  ftp.storbinary('STOR ' + filename, io.BytesIO(payload))
+                  chunks = []
+                  ftp.retrbinary('RETR ' + filename, chunks.append)
+                  downloaded = b''.join(chunks)
+                  if downloaded != payload:
+                      raise RuntimeError('Read-back SHA256 mismatch')
+                  print('Upload/read-back SHA256:', hashlib.sha256(downloaded).hexdigest())
+              finally:
+                  # Cleanup is strictly limited to the newly created test file.
+                  try:
+                      ftp.delete(filename)
+                      print('Test file removed')
+                  except Exception as e:
+                      print('WARNING: test file cleanup failed:', type(e).__name__)
+                      raise
+              print('Safe FTPS test passed')
+          finally:
+              try: ftp.quit()
+              except Exception: ftp.close()
+          PY
