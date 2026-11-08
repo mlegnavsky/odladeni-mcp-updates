@@ -1,0 +1,12 @@
+[
+  {
+    "file": "prvotni-instalace/modules/content/content-schema.php",
+    "old": "'link_to','text_padding','z_index'",
+    "new": "'link_to','text_padding','paragraph_spacing','z_index'"
+  },
+  {
+    "file": "prvotni-instalace/modules/content/content-schema.php",
+    "old": "function odlContentSettingValue(string $base,$v):void {\n",
+    "new": "function odlContentSettingValue(string $base,$v):void {\n if($base==='paragraph_spacing'){if(!is_array($v)||!isset($v['size'])||!is_numeric($v['size'])||!is_finite((float)$v['size'])||$v['size']<0||$v['size']>1000||!in_array($v['unit']??'px',['px','em','rem'],true))odlContentFail('INVALID_SETTING','Mezera odstavců vyžaduje nezáporný rozměr px/em/rem do 1000.');odlContentDimension($v);}\n"
+  }
+]

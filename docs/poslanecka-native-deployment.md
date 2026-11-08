@@ -19,6 +19,8 @@ For an existing site whose shared templates are already assigned, use the ordina
 
 The redesigned Header 76 and Footer 86 remained published and retained their native types, but the public site temporarily rendered Hello Elementor defaults. Fresh `theme_builder` inspection showed `pro_active:false`, no registered header/footer document types and no conditions API. Plugin inventory confirmed installed Elementor Pro 4.2.3 was inactive. Reactivating that installed provider restored both template IDs in the live DOM.
 
+Use canonical responsive values from actual native exports or registered controls. The original Header 76 export used `hide_mobile:'hidden-mobile'` and `hide_tablet:'hidden-tablet'`; writing `yes` does not produce those classes. Release 3.1.16 does not hardcode a generic switcher enum in `odlContentControlValue`; no switcher-validator change or release 3.1.17 is needed for this correction.
+
 Do not assume a license warning means the provider is active, and do not rewrite display conditions without evidence that they changed. Current bridge snapshots omit `_elementor_conditions` and template taxonomy; `content-preserve.php` preserves node settings only. The legacy `odlContentCheckSharedParts` guard checks the `hk4` renderer, not Elementor Pro conditions. A future conditions-preservation adapter requires explicit snapshots, verification and tests; this record does not claim that gap is fixed.
 
 ## Durable bridge fixes released 2026-11-08
@@ -29,19 +31,21 @@ Only narrow patch fragments and regression scripts are committed. Full plugin en
 | --- | --- | --- |
 | 3.1.14 | Permit WordPress entity-normalization equivalence only in post-title readback verification. Other fields, raw revisions, backups and CAS remain exact. | Stored release validation accepted, including PHP lint. Recovery operation `32cc73c4847e9cab2351c2d0dfc11283` completed; the original Kit revision `bd919bf218da4662d0067299227315df0495fc233c8cbba0723c26797579a638` was restored. |
 | 3.1.15 | Allow native `z_index`, `text_padding` and image `link_to`, with finite bounded number, dimension-object and strict enum validation. | Stored release validation accepted, including PHP lint. Actual capabilities exposed container `z_index`, button `text_padding` and image `link_to`. Registered per-element controls and select options remain authoritative. |
+| 3.1.16 | Allow native text-editor `paragraph_spacing` as a finite nonnegative dimension from 0 to 1000, with px/em/rem units and the existing dimension-shape validation. | Stored release validation accepted, including PHP lint. Registered per-widget control validation remains required; no custom CSS is introduced. |
 
 Release ZIP SHA-256 values:
 
 - 3.1.14: `02e1f0033b3261bdcd7a02e5e6773bb2889209ad7a40c82b93828f3ce0a9bef3`
 - 3.1.15: `04aac4367c76913fabce6d4aaded4b79559a6bb3599e348ae24ac007675ebc7d`
+- 3.1.16: `c14a31e5d15ff14bbb3f6d515905517c1ce77686e3dd91506e21eb5c702ab0dd`
 
-Patch/replacement fixtures are under `scripts/patches/`. Apply only to the stated source release with exact old-text matches, create a new version and run server release validation; do not weaken MCP or catalog gates. PHP regression scripts under `scripts/tests/php/` require a WordPress test bootstrap with the patched native content service loaded. They contain eight title cases and seventeen setting cases plus three provider rejection cases. They were prepared but **not executed locally**, because this workspace has no PHP binary. Server PHP lint and live recovery/capability evidence are separate from those unexecuted assertions.
+Patch/replacement fixtures are under `scripts/patches/`. Apply only to the stated source release with exact old-text matches, create a new version and run server release validation; do not weaken MCP or catalog gates. PHP regression scripts under `scripts/tests/php/` require a WordPress test bootstrap with the patched native content service loaded. They contain eight title cases, seventeen core-setting cases plus three provider rejection cases, and seventeen paragraph-spacing boundary/type cases. They were prepared but **not executed locally**, because this workspace has no PHP binary. Server PHP lint and live recovery/capability evidence are separate from those unexecuted assertions.
 
 ## Catalog importer remains a separate route
 
 The authenticated reusable-template deployment interface is virtual file `templates/_deploy.json`, discovered by `file_list({file:"templates"})`. Read its current SHA-256 and protocol, the exact design ID/revision and `fleet_list_sites` URL. Its `start` command requires full current Codex checks; subsequent `step` commands use the returned job ID/revision. Unknown results require `status`, not a fresh start. Restore remains a separately authorized action with verified backup and CAS.
 
-The original 1.7 template package is not portable: shared parts exist only in a child theme, with external CSS and HTML layout widgets. Native import rejects nonempty `styles`, unadapted HTML/shortcode widgets and unsupported theme page settings. The current creative audit also requires reduced-motion CSS inside `styles`; that conflicts with the importer and remains unresolved by the two narrow bridge fixes above. Bundled runtime motion CSS is opt-in, so empty `styles` alone does not prove a fallback is active. Do not forge review evidence or claim reusable catalog import certification.
+The original 1.7 template package is not portable: shared parts exist only in a child theme, with external CSS and HTML layout widgets. Native import rejects nonempty `styles`, unadapted HTML/shortcode widgets and unsupported theme page settings. The current creative audit also requires reduced-motion CSS inside `styles`; that conflicts with the importer and remains unresolved by the narrow bridge fixes above. Bundled runtime motion CSS is opt-in, so empty `styles` alone does not prove a fallback is active. Do not forge review evidence or claim reusable catalog import certification.
 
 Run the static preflight before presenting a reusable package as installable:
 
