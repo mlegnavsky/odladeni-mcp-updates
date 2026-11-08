@@ -1,0 +1,23 @@
+{
+  "site_url": "https://poslanecka-snemovna.cz/",
+  "date": "2026-11-08",
+  "operation_id": "2682055aa3b611315ea12b5b08faede3",
+  "verification": {
+    "desktop_home_and_footer": true,
+    "mobile_width": 449,
+    "mobile_scroll_width": 449,
+    "mobile_hero_height": 659.6979,
+    "mobile_photo": true,
+    "mobile_menu_toggle": true,
+    "results_static_map_loaded": true,
+    "preferences_own_daily_grp_no_graphs": true,
+    "login_form_rendered": true,
+    "login_submission_tested": false,
+    "protected_document_revisions_unchanged": true
+  },
+  "limitations": [
+    "Native gradient approximation uses two horizontal color stops instead of three.",
+    "Original decorative photo motion is not included.",
+    "Catalog importer certification was not performed; deployed through ordinary native existing-site edits."
+  ]
+}

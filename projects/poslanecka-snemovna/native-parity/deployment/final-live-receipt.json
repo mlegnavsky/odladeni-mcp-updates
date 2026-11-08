@@ -1,0 +1,24 @@
+{
+  "status": "done",
+  "operation_id": "2682055aa3b611315ea12b5b08faede3",
+  "backup": {
+    "backup_id": "2682055aa3b611315ea12b5b08faede3",
+    "sha256": "efa71a66dfddcadbcf8f258f644689ff99f2e8549a4cf5bab6b40f85eea5c4e7"
+  },
+  "created": [],
+  "revisions": {
+    "page:91": "1ddd814e793b4d6284b814ae8d8b7eb88464b39d0e17abcfb5a7993ae78012bb",
+    "page:172": "167cbdbdcc78e1e3ec06699a0d4b7bc9289e8c446be742784fe68c90f677f808",
+    "page:114": "a6227f037abefc98a7c37eccaa127bf8896b74ab15327eeae7c844ccfde0746a",
+    "page:1928": "2e3b90f0c60de904d6395a59c6b3c9926a0a6f2dd805bc4dcaf47f8d2c7bb1f5",
+    "page:1931": "1a21346bb7671c27e71afb85ae4699c4b4a172f9f1a12370e8d9fa65ea1ab1e9",
+    "page:1934": "08b16ddd459347d09016dd16f4c2a94452935caa48f551fbb0402f7927f68ba1",
+    "page:1937": "69b373852447209a2335f940d1161bcc5bdebb3a510423b348b3771a4b3fd654",
+    "page:76": "4561cd1e3cf7b2be09bcc3de6b4584ca2122df325ae3291175982b47574e0f6a",
+    "page:86": "fee3ef2172ea76d35d1f61a9d7def56e265c85683d124f1764952fd6af7aeef8",
+    "menu:33": "077402b93035a7f326aed15dae2c08a4295fa4a6fb8bac080672ad5eaf071627"
+  },
+  "deleted_comments": [],
+  "rollback_available": true,
+  "bridge_timing_ms": 9217.07
+}

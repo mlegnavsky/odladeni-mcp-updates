@@ -1,0 +1,183 @@
+{
+  "site_url": "https://poslanecka-snemovna.cz",
+  "request_id": "ps-parity-six-icon-tints-20261108-v1",
+  "operation_id": "a98681e0373d9c71f864401a362629e0",
+  "by_role": {
+    "home_archive": {
+      "id": 1940,
+      "url": "https://poslanecka-snemovna.cz/wp-content/uploads/2026/11/ps-679d3e0a045b-red.png",
+      "color": "#D81935"
+    },
+    "home_trends": {
+      "id": 1941,
+      "url": "https://poslanecka-snemovna.cz/wp-content/uploads/2026/11/ps-7a82347b86a8-cyan.png",
+      "color": "#087AB8"
+    },
+    "home_models": {
+      "id": 1942,
+      "url": "https://poslanecka-snemovna.cz/wp-content/uploads/2026/11/ps-228eacf1c04f-navy.png",
+      "color": "#24486F"
+    },
+    "workflow_region": {
+      "id": 1943,
+      "url": "https://poslanecka-snemovna.cz/wp-content/uploads/2026/11/ps-fd05c4f58bee-light-cyan.png",
+      "color": "#8ED3F6"
+    },
+    "workflow_compare": {
+      "id": 1944,
+      "url": "https://poslanecka-snemovna.cz/wp-content/uploads/2026/11/ps-f4d6ee45dbaa-pink.png",
+      "color": "#FF99A7"
+    },
+    "workflow_sources": {
+      "id": 1945,
+      "url": "https://poslanecka-snemovna.cz/wp-content/uploads/2026/11/ps-c0dd4fc45f37-periwinkle.png",
+      "color": "#B7CBFF"
+    }
+  },
+  "assets": [
+    {
+      "role": "home_archive",
+      "source": "/workspace/scratch/9bc56d34ceac/deployment/assets/ps-679d3e0a045b.svg",
+      "color": "#D81935",
+      "path": "/workspace/scratch/9bc56d34ceac/deployment/native-assets/ps-679d3e0a045b-red.png",
+      "bytes": 873,
+      "width": 128,
+      "height": 128,
+      "sha256": "7a08bc8d8960b406bed0bb925adf8effd5817da38021fb3396509e4b621514d6",
+      "attachment": {
+        "kind": "media",
+        "id": 1940,
+        "post_type": "attachment",
+        "title": "home_archive #D81935",
+        "caption": "",
+        "description": "",
+        "alt": "",
+        "status": "inherit",
+        "url": "https://poslanecka-snemovna.cz/wp-content/uploads/2026/11/ps-679d3e0a045b-red.png",
+        "mime_type": "image/png"
+      },
+      "revision": "d408c78ead32f904f70ee96fcec5dd2781cee5be15852b49b5d8bfe720a2656e",
+      "verified": true
+    },
+    {
+      "role": "home_trends",
+      "source": "/workspace/scratch/9bc56d34ceac/deployment/assets/ps-7a82347b86a8.svg",
+      "color": "#087AB8",
+      "path": "/workspace/scratch/9bc56d34ceac/deployment/native-assets/ps-7a82347b86a8-cyan.png",
+      "bytes": 2137,
+      "width": 128,
+      "height": 128,
+      "sha256": "f5c89a59a634fcbd0448980f6f059ad5569de70b8f0516a7b3649c54fe091c06",
+      "attachment": {
+        "kind": "media",
+        "id": 1941,
+        "post_type": "attachment",
+        "title": "home_trends #087AB8",
+        "caption": "",
+        "description": "",
+        "alt": "",
+        "status": "inherit",
+        "url": "https://poslanecka-snemovna.cz/wp-content/uploads/2026/11/ps-7a82347b86a8-cyan.png",
+        "mime_type": "image/png"
+      },
+      "revision": "91592da0dbcf9a29962e916672335418d7b41ef91676fd46530293e2b1d2bcb0",
+      "verified": true
+    },
+    {
+      "role": "home_models",
+      "source": "/workspace/scratch/9bc56d34ceac/deployment/assets/ps-228eacf1c04f.svg",
+      "color": "#24486F",
+      "path": "/workspace/scratch/9bc56d34ceac/deployment/native-assets/ps-228eacf1c04f-navy.png",
+      "bytes": 2188,
+      "width": 128,
+      "height": 128,
+      "sha256": "df6c89af06e0f1822aee62873ca1800cb997423e3374f35b983604180eea2a73",
+      "attachment": {
+        "kind": "media",
+        "id": 1942,
+        "post_type": "attachment",
+        "title": "home_models #24486F",
+        "caption": "",
+        "description": "",
+        "alt": "",
+        "status": "inherit",
+        "url": "https://poslanecka-snemovna.cz/wp-content/uploads/2026/11/ps-228eacf1c04f-navy.png",
+        "mime_type": "image/png"
+      },
+      "revision": "7f4c0bb91b677b01042a42b674175bda193141dff28ed6e7980f85503a8e4a0f",
+      "verified": true
+    },
+    {
+      "role": "workflow_region",
+      "source": "/workspace/scratch/9bc56d34ceac/deployment/assets/ps-fd05c4f58bee.svg",
+      "color": "#8ED3F6",
+      "path": "/workspace/scratch/9bc56d34ceac/deployment/native-assets/ps-fd05c4f58bee-light-cyan.png",
+      "bytes": 2249,
+      "width": 128,
+      "height": 128,
+      "sha256": "987ffc1aebc05ef3eabced829212003427614b3986a9d1a516e84ab047f04dba",
+      "attachment": {
+        "kind": "media",
+        "id": 1943,
+        "post_type": "attachment",
+        "title": "workflow_region #8ED3F6",
+        "caption": "",
+        "description": "",
+        "alt": "",
+        "status": "inherit",
+        "url": "https://poslanecka-snemovna.cz/wp-content/uploads/2026/11/ps-fd05c4f58bee-light-cyan.png",
+        "mime_type": "image/png"
+      },
+      "revision": "cfe9041652890b0d7e1fef597c69f9eca24c79f8e33916cda4762f1c26648f77",
+      "verified": true
+    },
+    {
+      "role": "workflow_compare",
+      "source": "/workspace/scratch/9bc56d34ceac/deployment/assets/ps-f4d6ee45dbaa.svg",
+      "color": "#FF99A7",
+      "path": "/workspace/scratch/9bc56d34ceac/deployment/native-assets/ps-f4d6ee45dbaa-pink.png",
+      "bytes": 948,
+      "width": 128,
+      "height": 128,
+      "sha256": "2f59ca44d18546d96aaa9aa98849fdf05662f0d7cb2df66660bbcf3a4e2dd086",
+      "attachment": {
+        "kind": "media",
+        "id": 1944,
+        "post_type": "attachment",
+        "title": "workflow_compare #FF99A7",
+        "caption": "",
+        "description": "",
+        "alt": "",
+        "status": "inherit",
+        "url": "https://poslanecka-snemovna.cz/wp-content/uploads/2026/11/ps-f4d6ee45dbaa-pink.png",
+        "mime_type": "image/png"
+      },
+      "revision": "faf81cf57117eba50cc25d7f08a0aa91c1fb798edb5df4fffb8b12d85b6db10a",
+      "verified": true
+    },
+    {
+      "role": "workflow_sources",
+      "source": "/workspace/scratch/9bc56d34ceac/deployment/assets/ps-c0dd4fc45f37.svg",
+      "color": "#B7CBFF",
+      "path": "/workspace/scratch/9bc56d34ceac/deployment/native-assets/ps-c0dd4fc45f37-periwinkle.png",
+      "bytes": 3333,
+      "width": 128,
+      "height": 128,
+      "sha256": "9755fbd798461a965e636b07e64f25bc9d0c1621283107972d91711a3edef030",
+      "attachment": {
+        "kind": "media",
+        "id": 1945,
+        "post_type": "attachment",
+        "title": "workflow_sources #B7CBFF",
+        "caption": "",
+        "description": "",
+        "alt": "",
+        "status": "inherit",
+        "url": "https://poslanecka-snemovna.cz/wp-content/uploads/2026/11/ps-c0dd4fc45f37-periwinkle.png",
+        "mime_type": "image/png"
+      },
+      "revision": "5d46cc3a68c8d7f176db0ecacd7733e1883010a1467deeb215c7a60d3b3687a3",
+      "verified": true
+    }
+  ]
+}

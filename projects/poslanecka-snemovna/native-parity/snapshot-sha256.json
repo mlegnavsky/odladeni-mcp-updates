@@ -1,0 +1,42 @@
+{
+  "deployment/parity_convert.py": {
+    "bytes": 44099,
+    "sha256": "86b94e2226b3409fb6cad05dad2ba87a679874b7ea8447a63222cce1104ae36e"
+  },
+  "deployment/parity-design.json": {
+    "bytes": 650934,
+    "sha256": "3b91c748d42968b0728d0d54f2e71ba87e714799bce15b694ee025d99eda9929"
+  },
+  "deployment/native-asset-map.json": {
+    "bytes": 19794,
+    "sha256": "45b85e7da3086ab4a962d62d62e77a132e88973dd904836894f1890784054537"
+  },
+  "deployment/parity-asset-map.json": {
+    "bytes": 6658,
+    "sha256": "95407d13a418f07a4b3fff2ba8c67928d38d2755e6ccb7baa5818056701e2872"
+  },
+  "deployment/native_convert.py": {
+    "bytes": 11661,
+    "sha256": "58d51f7cc366f55787b2edf11b01d5c0c85145bf6cc6574b0ad520482cc60a35"
+  },
+  "deployment/quality_convert.py": {
+    "bytes": 15616,
+    "sha256": "421e68dcbc9b12346b54ab8ce3649977c4e0253954b283e216e7c1824a05ef0f"
+  },
+  "deployment/live-unbound.json": {
+    "bytes": 171986,
+    "sha256": "c7b336d2b694aff231bba891ca79eb37152ab35e5b7c84bc457ac6bd4e77f64e"
+  },
+  "v17/catalog-new.json": {
+    "bytes": 96862,
+    "sha256": "6c11b8ddbb24cd4c7f9a2c205b1950faf8b8ab837636abc1b66c8e5fc180c4e1"
+  },
+  "deployment/final-live-receipt.json": {
+    "bytes": 1195,
+    "sha256": "a6f2d29b01b57f340114015ecd4a4b68a1ff28034bc0d99925f160bc81704b3c"
+  },
+  "deployment/production-browser-verification.json": {
+    "bytes": 830,
+    "sha256": "c6827af48c54d18fc5a8a0bb9cf234d13d6b9596aef4074d7dbca4bc473fc22e"
+  }
+}
