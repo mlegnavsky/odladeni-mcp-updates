@@ -1,0 +1,12 @@
+[
+  {
+    "file": "prvotni-instalace/modules/content/content-schema.php",
+    "old": "'image_size','caption_source','align'",
+    "new": "'image_size','caption_source','link_to','text_padding','z_index','align'"
+  },
+  {
+    "file": "prvotni-instalace/modules/content/content-schema.php",
+    "old": "function odlContentSettingValue(string $base,$v):void {\n",
+    "new": "function odlContentSettingValue(string $base,$v):void {\n if($base==='z_index'&&(!is_numeric($v)||!is_finite((float)$v)||abs((float)$v)>10000))odlContentFail('INVALID_SETTING','Z-index musí být konečné číslo v rozsahu -10000 až 10000.');\n if($base==='text_padding'){if(!is_array($v))odlContentFail('INVALID_SETTING','Odsazení tlačítka vyžaduje objekt rozměrů.');odlContentDimension($v);}\n if($base==='link_to'&&!in_array($v,['none','file','custom'],true))odlContentFail('INVALID_SETTING','Nepodporovaný cíl odkazu obrázku.');\n"
+  }
+]

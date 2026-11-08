@@ -1,0 +1,12 @@
+[
+  {
+    "file": "prvotni-instalace/modules/content/content-resources.php",
+    "old": "function odlContentSave(array $s,bool $recovery=false):array {",
+    "new": "/** Only WordPress entity normalization may differ; revisions and backups remain byte-exact. */\nfunction odlContentPostTitleMatches(string $actual,string $expected):bool {\n return $actual===$expected||wp_kses_normalize_entities($actual)===wp_kses_normalize_entities($expected);\n}\nfunction odlContentSave(array $s,bool $recovery=false):array {"
+  },
+  {
+    "file": "prvotni-instalace/modules/content/content-resources.php",
+    "old": "if($actual[$k]!==$s[$k])odlContentFail('VERIFY_FAILED','Uložená stránka neodpovídá plánu.',500);",
+    "new": "if($k==='title'?!odlContentPostTitleMatches($actual[$k],$s[$k]):$actual[$k]!==$s[$k])odlContentFail('VERIFY_FAILED','Uložená stránka neodpovídá plánu.',500);"
+  }
+]
