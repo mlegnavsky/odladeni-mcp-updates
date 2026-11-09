@@ -1,0 +1,26 @@
+/* Compact one-line WordPress plugin inventory for Odladeni */
+.plugin-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.plugin-table th,.plugin-table td{border-bottom:1px solid #e5eaf2;padding:8px 9px;vertical-align:middle}
+.plugin-table th:first-child{width:36%}
+.plugin-table th:nth-child(2){width:10%}
+.plugin-table th:nth-child(3){width:9%}
+.plugin-table th:nth-child(4){width:10%}
+.plugin-table th:nth-child(5){width:16%}
+.plugin-table th:nth-child(6){width:19%}
+.plugin-table tbody tr:hover{background:#f7faff}
+.plugin-table .plugin-name{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plugin-table .icon-ok{color:#15803d;font-weight:700;font-size:19px}
+.plugin-table .icon-off{color:#94a3b8;font-size:19px}
+.plugin-table .btn{padding:5px 9px;font-size:12px;min-height:0;border-radius:6px}
+.plugin-table form{margin:0}
+.plugin-table details{position:relative;display:inline-block}
+.plugin-table summary{list-style:none;cursor:pointer;color:#2456b8;font-size:20px}
+.plugin-table summary::-webkit-details-marker{display:none}
+.plugin-table details[open]{z-index:5}
+.plugin-table .plugin-info{position:absolute;top:28px;right:0;width:350px;max-width:75vw;background:white;border:1px solid #cbd5e1;border-radius:8px;padding:12px;box-shadow:0 8px 24px #17234324;font-size:13px;line-height:1.5;white-space:normal}
+.plugin-table .auto-toggle{width:46px;height:26px;display:inline-flex;align-items:center;padding:3px;background:#dce2ea;border:1px solid #cbd5e1;border-radius:30px;cursor:pointer;transition:background .15s}
+.plugin-table .auto-toggle .knob{width:18px;height:18px;border-radius:50%;background:white;box-shadow:0 1px 3px #0002}
+.plugin-table .auto-toggle.on{background:#16803c;justify-content:flex-end}
+.plugin-table .auto-toggle:disabled{opacity:.45;cursor:not-allowed}
+.plugin-table .auto-toggle:focus-visible,.plugin-table summary:focus-visible{outline:2px solid #2456b8;outline-offset:3px}
+@media(max-width:760px){.plugin-table{min-width:740px}.plugin-table-wrap{overflow-x:auto}}

@@ -1,0 +1,2 @@
+/* Final cascade fix: overrides the old fixed!important sidebar rule. */
+@media(min-width:841px){.dash-sidebar{position:relative!important;top:auto!important;left:auto!important;bottom:auto!important;float:left!important;height:auto!important;min-height:calc(100vh - 100px)!important;overflow:visible!important;justify-content:space-between!important;background:transparent!important;border-right:0!important;box-shadow:none!important}.dash-sidebar .sidebar-brand{margin-top:auto}}

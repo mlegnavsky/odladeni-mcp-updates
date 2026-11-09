@@ -1,0 +1,3 @@
+## Povinné samostatné pravidlo: Podrobnosti pluginu
+
+Každá publikovaná verze musí mít vyplněný název, popis účelu, hlavní funkce, změny poslední verze a verzi v readme.txt i manifest.json. Ve WordPressu musí fungovat modal Zobrazit podrobnosti (plugin-information): Popis a Historie změn nesmí být prázdné. Stejné informace musí zobrazit Odladění. Neúplná dokumentace znamená FAIL a blokaci publikace, nikoli varování. Všechny cesty publikování ZIP musí používat tentýž validátor; bez napojení nelze deklarovat enforcement. U externích pluginů kontrolovat dostupnost údajů, ale nevynucovat změny cizích balíčků.

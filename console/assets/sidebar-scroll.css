@@ -1,0 +1,6 @@
+/* Sidebar scrolls with the document, not fixed to the viewport. */
+.dash-sidebar{position:absolute;top:100px;left:0;bottom:auto;width:242px;min-height:calc(100% - 100px);background:#fff;border-right:0;padding:24px 14px;display:flex;flex-direction:column;justify-content:flex-start;gap:32px;z-index:5}
+.dash-sidebar nav{display:grid;gap:8px}
+.dash-sidebar .sidebar-brand{margin-top:32px}
+.dash-main{margin:20px 20px 32px 242px;max-width:none;padding:0}
+@media(max-width:760px){.dash-sidebar{position:static;width:auto;min-height:0;padding:12px}.dash-main{margin:16px;padding:0}}
