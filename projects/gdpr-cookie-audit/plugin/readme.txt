@@ -1,6 +1,6 @@
 === GDPR Cookies – bezplatný audit webu ===
 Contributors: mlegnavsky
-Stable tag: 2.2.3
+Stable tag: 2.3.0
 Requires PHP: 8.0
 License: GPLv2 or later
 

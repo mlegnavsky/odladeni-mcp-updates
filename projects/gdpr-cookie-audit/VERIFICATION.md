@@ -413,3 +413,33 @@ backup8aa53bb7a5580a3b3949849a7806ed8c; ZIP SHA256
 13289a4a5a9c5888ee4066a0792cba4b7c604a9311e1041649b036a779c4b735.
 Live saved report reloaded: zero internal bar, zero internal section, zero internal
 opening buttons; versioned2.2.3 assets. Signed-in wp-admin visual QA was not performed.
+
+
+## Private municipality directory — 2026-11-13
+
+2.3.0 active only on gdpr-cookies.cz at2026-11-13T17:53:31Z, backup
+785084b65b132a5a9510f6829222d04b; ZIP SHA256
+8182be31b38a9d1cf72ccb5224aa7eb1b93aabda109a410b9918b879b4492073.
+Tools → Obce ČR requires manage_options.6254 municipality rows with canonical six-digit
+codes,14 regions,77 source district entries (including coterminous Prague). Native
+WordPress table,50-row pagination, region/district filters, name/code search with
+Czech accent folding. Duplicate names retain code/geography; labels and GET inputs
+escaped. No public endpoint/shortcode, no write action or runtime source dependency.
+Bundled data is guarded PHP, loaded only when directory requested.
+
+Read source project's signed live status and project manifest1.37.0. Reused only public
+geographic facts from SHA256-verified ps-precinct-registry1.19.3 release
+(a5a40530a20f3bb13fc137ecbc4a748876e4723659f0c50db75c27a9bf2615f4),
+assets/units.jsonl, snapshot2026-09-08. Exact four military codes excluded:
+503941,545422,555177,592935. No historical elections, precincts, boroughs,
+resident statistics, political records or personal data copied. Source project is
+read-only and unchanged. Extraction script pins source hash, checks counts/hierarchy,
+and regeneration produces byte-identical bundled PHP. Provenance retained in data.
+
+Full PHP regression224 PASS assertions, no warnings/errors. New directory tests cover
+all6254 rows, uniqueness, military exclusions, geography, accentless/code searches,
+duplicate names, combined filters, empty search results, out-of-range pages, malformed
+GET arrays, unauthorized callback, authorized HTML and input escaping. Independent
+review reconciled every row against verified source, with no important findings.
+Package PHP/JS lint and diff --check passed; installed plugin active2.3.0 signed update
+receipt verified. Signed-in browser wp-admin visual QA was not performed.
