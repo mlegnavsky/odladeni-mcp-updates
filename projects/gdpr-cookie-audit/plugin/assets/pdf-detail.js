@@ -1,0 +1,83 @@
+(function(root){
+'use strict';
+function buildPdf(report){
+ if(report.is_internal!==true)throw Error('Interní export vyžaduje přihlášení správce.');
+ const {jsPDF}=root.jspdf, doc=new jsPDF({unit:'mm',format:'a4',compress:true});
+ root.GCAFont(doc);const s=root.GCAModel.summarize(report);let y=24,page=1;
+ const colors={ink:[24,54,76],muted:[87,107,123],blue:[50,103,220],error:[181,54,50],warning:[152,107,10],pass:[22,119,94],unknown:[98,115,132]};
+ const labels={error:'Problém',warning:'Upozornění',pass:'Zjištěno',unknown:'Neověřeno',not_applicable:'Netýká se tohoto webu'};
+ function footer(){doc.setFontSize(8);doc.setTextColor(...colors.muted);doc.text('GDPR-COOKIES.CZ  /  Technická zpráva  /  '+page,16,286);doc.text('Automatická kontrola není právní certifikací.',16,291);}
+ function space(h){if(y+h>274){footer();doc.addPage();page++;y=22;}}
+ function text(t,size=10,color='ink',gap=4){doc.setFont('GCA','normal');doc.setFontSize(size);doc.setTextColor(...(colors[color]||colors.ink));const lines=doc.splitTextToSize(String(t||''),178);for(const line of lines){space(size*.45+gap);doc.text(line,16,y);y+=size*.45+1;}y+=gap;}
+ function title(t){space(40);y+=5;text(t,16,'ink',5);}
+ function rule(){space(5);doc.setDrawColor(220,229,237);doc.line(16,y,194,y);y+=7;}
+ doc.setProperties({title:'Kontrola cookies — '+report.url,subject:'Technická kontrola veřejných stránek a zásad cookies',author:'GDPR-Cookies.cz',creator:'GDPR Cookies Audit'});
+ text('GDPR COOKIES / ZPRÁVA O KONTROLE',9,'blue',8);
+ text('Přehled cookies a dokumentace',25,'ink',8);
+ text(report.url,13,'blue',4);
+ text('Měření: '+new Date(report.started_at).toLocaleString('cs-CZ'),10,'muted');
+ text('ID: '+(report.id||'neuvedeno')+(report.storage==='permanent'?' | Trvale uloženo v historii':''),9,'muted');
+ if(report.report_url)text('Trvalá adresa měření: '+report.report_url,8,'blue');
+ text('Stav: '+({complete:'zdrojová kontrola dokončena',partial:'částečný výsledek',failed:'kontrolu se nepodařilo provést',running:'nedokončená kontrola'}[report.state]||report.state),10,'muted');
+ text('Rozsah: '+(report.pages||[]).length+' načtených stránek, '+s.cookiePolicies.length+' dokumentů. Verze metodiky 1.1.',10,'muted');
+ rule();
+ const score=s.overviewScore;
+ text('Souhrn dostupných podkladů: '+(score.percent===null?'nedokončeno':score.percent+' %'),21,'blue',5);
+ text('Splněné položky: '+score.passed+' z '+score.total+'. Každá položka má stejnou váhu.',10,'ink',4);
+ text('Procento sčítá kontroly veřejných dokumentů a údaje deklarovaných kategorií. Nehodnotí barevnost ani skutečné chování lišty a není procentem právního souladu webu.',9,'muted',6);
+ text('Kontrola cookies a cookie lišty',14,'ink');
+ text(s.scenarios.length?'Zpráva spojuje kontrolu cookie dokumentace, zdrojů a uvedených skutečně provedených prohlížečových scénářů. Výsledek platí pro testované stránky a dobu pozorování.':'Zpráva vychází z HTTP odpovědí a zdroje stránek. Prohlížečové scénáře nebyly provedeny. Nalezená integrace neprokazuje její spuštění ani porušení pravidel.',10,'muted',8);
+ text('Rozsah se týká pouze cookies. Obecné zásady ochrany osobních údajů nejsou předmětem tohoto měřáku.',9,'muted',6);
+ const metrics=[['Problémy',s.errors,'error'],['Upozornění',s.warnings,'warning'],['Zjištěno',s.passed,'pass'],['Neověřeno',s.unknown,'unknown']];
+ space(32);metrics.forEach(([label,n,c],i)=>{const x=16+i*45;doc.setFillColor(244,247,250);doc.roundedRect(x,y,42,29,3,3,'F');doc.setTextColor(...colors[c]);doc.setFontSize(22);doc.text(String(n),x+4,y+12);doc.setFontSize(8);doc.setTextColor(...colors.muted);doc.text(label,x+4,y+22);});y+=39;
+ text('Poměr výsledků jednotlivých kontrol',12,'ink');space(14);
+ const total=metrics.reduce((a,m)=>a+m[1],0)||1;let x=16;metrics.forEach(([,n,c])=>{const w=n/total*178;if(w){doc.setFillColor(...colors[c]);doc.rect(x,y,w,5,'F');x+=w;}});y+=14;
+ title('Co řešit jako první');
+ const priorities=s.findings.filter(f=>['error','warning'].includes(f.status)).slice(0,3);
+ if(!priorities.length)text('V dostupném zdrojovém auditu nebylo nalezeno upozornění. Neověřené kontroly zůstávají otevřené.');
+ priorities.forEach((f,i)=>{text((i+1)+'. '+f.title,11);text(f.fix,9,'muted');});
+ title('Nalezené integrace ve zdroji');
+ text('Graf uvádí počet načtených stránek s nalezenou integrací. Nejde o počet spuštění ani skutečně odeslaných požadavků.',9,'muted');
+ if(!s.services.length)text('Známé integrace nebyly v načteném zdrojovém kódu rozpoznány. To nevylučuje dynamicky načítané služby.');
+ s.services.forEach(service=>{space(25);text(service.name+' — '+service.pages.length+' stránek',10);space(8);doc.setFillColor(...colors.blue);doc.roundedRect(16,y,Math.max(2,service.pages.length/Math.max(1,report.pages.length)*178),3,1,1,'F');y+=10;text('Zdrojová stopa: '+service.evidence,8,'muted');service.pages.forEach(url=>text('Stránka: '+url,8,'blue'));});
+ title('Rozsah měření');
+ (report.pages||[]).forEach(p=>{text(p.url,9,'blue');text((p.title||'Bez titulku')+' | HTTP '+p.status+' | integrace: '+p.services.length+' | HTTP cookies: '+p.cookies.length,8,'muted');});
+ (report.errors||[]).forEach(e=>text('NEOVĚŘENO: '+e.url+' — '+e.message,9,'error'));
+ title('Deklarované kategorie a položky');
+ text('Deklarace provozovatele/CMP, nikoli měření skutečně uložených cookies. Kategorie hodnotí název, doménu, životnost, popis a zařazení, každý údaj jedním bodem. Nejde o právní ani prohlížečové ověření.',9,'muted');
+ text('Dokumentace: '+(s.documentationScore.percent===null?'nedokončeno':s.documentationScore.percent+' %')+' | Kategorie: '+(s.declarationAssessment.percent===null?'nedokončeno':s.declarationAssessment.percent+' %'),11);
+ for(const category of s.declarationAssessment.categories){
+  title(category.label+' — '+(category.percent===null?'bez hodnocení':category.percent+' %'));
+  text(category.records.length+' položek | '+category.passed+' / '+category.total+' bodů',9,'muted');
+  for(const row of category.records){space(35);text(row.name+' | '+row.domain,11);text('Doba: '+(row.lifetime||'chybí'),9);text(row.description||'Popis chybí.',9,'muted');text(row.missing.length?'Chybějící údaje: '+row.missing.join(', '):'Všech pět údajů uvedeno.',9,row.missing.length?'error':'pass');text('Zdroj deklarace: '+row.source_url,8,'blue');}
+ }
+ title('Cookies z HTTP odpovědí');
+ text(s.scenarios.length?'Hodnoty cookies se neukládají. Rozsah prohlížečového měření je uveden u jednotlivých scénářů.':'Hodnoty cookies se neukládají. JavaScriptem vytvořené cookies nebyly měřeny.',9,'muted');
+ if(!s.cookies.length)text('V měřených HTTP odpovědích nebyla nalezena hlavička Set-Cookie. To neznamená, že web nepoužívá cookies.');
+ s.cookies.forEach(c=>{space(26);text(c.name+' | '+c.domain,11);text('Cesta: '+c.path+' | Životnost: '+c.lifetime,9,'muted');text('Secure: '+(c.secure?'ano':'ne')+' | HttpOnly: '+(c.httpOnly?'ano':'ne')+' | SameSite: '+c.sameSite,9,'muted');text('Zdroj: '+c.url,8,'muted');});
+ title('Dokumentace cookies');
+ if(!s.cookiePolicies.length)text('Dokumentaci se nepodařilo automaticky ověřit. Viz doporučení v nálezech.');
+ s.cookiePolicies.forEach(p=>{(p.documents||[{url:p.url}]).forEach(d=>text(d.url,10,'blue'));Object.values(p.checks||{}).forEach(c=>{text(c.label+' — '+root.GCAModel.policyOutcomeLabel(c),10);text(c.evidence,9,'muted');if(c.source_url)text('Zdroj: '+c.source_url,8,'blue');if(c.status!=='pass'&&c.recommendation)text('Doporučená úprava: '+c.recommendation,9,'muted');});(p.services||[]).forEach(c=>{text(c.name+' — '+(c.status==='pass'?'zmínka nalezena':'zmínka nenalezena'),10);text(c.evidence,9,'muted');});});
+ title('Rozpis souhrnného hodnocení podkladů');
+ text('Šest základních kontrol textu a navíc popis každé nalezené služby a cookie. Navíc pět údajů každé deklarované položky: název, doména, doba trvání, popis a zařazení. Každý údaj: 1 bod při splnění, 0 při chybě. Procento = splněné / všechny položky × 100, zaokrouhleno. Hodnota 100 % patří pouze úplnému splnění všech položek. Nedostupné části brání dokončení hodnocení.',9,'muted');
+ score.criteria.forEach(c=>text((c.status==='pass'?'1 / 1':c.status==='unknown'?'Nedostupné':'0 / 1')+' | '+c.label+' | '+root.GCAModel.policyOutcomeLabel(c),9,c.status));
+ title('Podrobné nálezy a doporučené kroky');
+ s.findings.forEach((f,i)=>{space(24);text((i+1)+'. '+f.title,12,f.status);text(labels[f.status],8,f.status);text('Zjištění: '+f.evidence,9);text('Doporučení: '+f.fix,9,'muted');if(f.url)text('Stránka: '+f.url,8,'blue');rule();});
+ title('Skutečně pozorované cookies a úložiště');
+ text('Technické testy bez nálezu: '+(s.browserScore.percent===null?'bez hodnocení':s.browserScore.percent+' %')+' | '+s.browserScore.passed+' / '+s.browserScore.total+' provedených testů | nedokončeno '+s.browserScore.unavailable,10);
+ for(const observation of report.browser?.observations||[]){title('Scénář: '+observation.phase);for(const cookie of observation.cookies)text(cookie.name+' | '+cookie.domain+' | '+cookie.category+' | '+cookie.lifetime,8);for(const item of observation.storage)text(item.type+' | '+item.name+' | '+item.origin,8,'muted');for(const request of observation.requests.filter(r=>r.category!=='resource'))text(request.method+' '+request.url+' | '+request.category,8,'blue');}
+ for(const image of report.browser?.screenshots||[]){if(!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(image.data_url||''))continue;title(image.title);const properties=doc.getImageProperties(image.data_url),width=Math.min(178,100*properties.width/properties.height),height=width*properties.height/properties.width;space(height+10);doc.addImage(image.data_url,'JPEG',16,y,width,height);y+=height+8;}
+ title('Prohlížečové scénáře');
+ if(!s.scenarios.length)text(report.browser?.reason||'V tomto měření neprovedeno. Chování souhlasu a JavaScriptových cookies nebylo ověřeno.',10,'unknown');
+ s.scenarios.forEach(x=>{text(x.title+' — '+(labels[x.status]||x.status),12,x.status);text(x.evidence||x.reason||'',9);});
+ title('Interní porovnání zařazení a životnosti');
+ for(const c of report.presentation?.classification_details||[]){space(35);text(c.name+' | '+(c.type||'deklarace'),11);text('Rozpoznaná kategorie: '+c.recognized+' | deklarovaná: '+(c.declared||'nenalezena'),9);text(c.basis,9,'muted');if(c.lifetime_comparison)text('Životnost: '+c.lifetime_comparison+' | naměřeno: '+(c.lifetime||'neuvedeno')+' | deklarováno: '+(c.declared_lifetime||'neuvedeno'),9,'muted');}
+ title('Metodika a omezení');
+ text('Maximálně pět veřejných HTML stránek včetně dokumentace. Kontrola běží bez přihlášení a bez odesílání formulářů. Detekce známých služeb je založena na zdrojových stopách; samotné nalezení služby není důkazem jejího spuštění. Kontrola dokumentace automaticky porovnává dostupné cookie dokumenty a jejich tabulky. Nalezené informace uvádí s důkazem, nerozpoznané údaje označuje jako nenalezené v daném rozsahu. Chování lišty je samostatná kontrola. Tento výsledek není posouzením úplného souladu s GDPR ani zárukou bezchybnosti.',9,'muted');
+ text('Zdroje metodiky: ÚOOÚ — otázky a odpovědi k cookies; Google — Consent Mode overview.',9,'muted');
+ text('https://uoou.gov.cz/verejnost/qa-otazky-a-odpovedi/cookies',8,'blue');
+ text('https://developers.google.com/tag-platform/security/concepts/consent-mode',8,'blue');
+ footer();return doc;
+}
+root.GCAPdfDetail={buildPdf};
+})(typeof window!=='undefined'?window:globalThis);

@@ -62,7 +62,7 @@ function gca_archive_admin(){
 }
 function gca_admin_report($request){
     $id=$request->get_param('id');if(!is_string($id)||!preg_match('/^[a-f0-9]{32}$/',$id))return gca_error('Neplatné ID měření.',400);
-    $job=gca_load_job($id);return $job?gca_public_report($job):gca_error('Měření nebylo nalezeno.',404);
+    $job=gca_load_job($id);return $job?gca_public_report($job,true):gca_error('Měření nebylo nalezeno.',404);
 }
 
 /** Insert-only promotion: a concurrent step must always win over a legacy snapshot. */

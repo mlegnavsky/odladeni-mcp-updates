@@ -2,7 +2,7 @@
 /**
  * Plugin Name: GDPR Cookies – bezplatný audit webu
  * Description: Přehledná kontrola cookies, zdrojových integrací a zásad cookies s PDF zprávou.
- * Version: 1.9.2
+ * Version: 2.1.1
  * Requires PHP: 8.0
  * Author: Martin Legnavsky
  * Update URI: https://plaginy.odladeni.cz/gdpr-cookie-audit
@@ -11,19 +11,23 @@
 if (!defined('ABSPATH')) exit;
 require_once __DIR__.'/core.php';
 require_once __DIR__.'/runtime.php';
-define('GCA_VERSION','1.9.2');
+define('GCA_VERSION','2.1.1');
 require_once __DIR__.'/archive.php';
 require_once __DIR__.'/browser.php';
+require_once __DIR__.'/presentation.php';
 
 function gca_asset_url($file) { return plugins_url('assets/'.$file,__FILE__); }
 function gca_enqueue() {
     wp_enqueue_style('gca-audit',gca_asset_url('audit.css'),[],GCA_VERSION);
+    wp_enqueue_style('gca-dashboard',gca_asset_url('dashboard.css'),['gca-audit'],GCA_VERSION);
+    wp_enqueue_script('gca-view',gca_asset_url('view.js'),[],GCA_VERSION,true);
     wp_enqueue_script('gca-pdf',gca_asset_url('jspdf.umd.min.js'),[],GCA_VERSION,true);
     wp_enqueue_script('gca-font',gca_asset_url('font.js'),['gca-pdf'],GCA_VERSION,true);
     wp_enqueue_script('gca-model',gca_asset_url('model.js'),[],GCA_VERSION,true);
     wp_enqueue_script('gca-pdf-export',gca_asset_url('pdf.js'),['gca-font','gca-model'],GCA_VERSION,true);
+    wp_enqueue_script('gca-pdf-detail',gca_asset_url('pdf-detail.js'),['gca-pdf-export'],GCA_VERSION,true);
     wp_enqueue_script('gca-history',gca_asset_url('history.js'),[],GCA_VERSION,true);
-    wp_enqueue_script('gca-audit',gca_asset_url('audit.js'),['gca-pdf-export','gca-history'],GCA_VERSION,true);
+    wp_enqueue_script('gca-audit',gca_asset_url('audit.js'),['gca-pdf-export','gca-history','gca-view'],GCA_VERSION,true);
     if(current_user_can('manage_options'))wp_localize_script('gca-audit','GCAAdmin',['nonce'=>wp_create_nonce('wp_rest')]);
 }
 add_action('wp_enqueue_scripts',function(){if(is_page('kontrola-cookies'))gca_enqueue();});
@@ -62,11 +66,12 @@ function gca_session($request) {
     if (!$job || (($job['storage']??'')!=='permanent'&&($job['expires_at']??0)<time()) || !hash_equals($job['token_hash'],hash('sha256',$token))) return null;
     return $job;
 }
-function gca_public_report($job) {
+function gca_public_report($job, $internal=false) {
      $job['report_url']=gca_report_url($job);$job['total']=count($job['queue']);$job['policy_discovery']=gca_policy_discovery($job);
     unset($job['token_hash'],$job['queue'],$job['ip_hash'],$job['manual_policy'],$job['_declaration_clients'],$job['_browser_started'],$job['_browser_wait_started'],$job['_source_state'],$job['_policy_documents']);
     foreach($job['policies'] as &$policy) unset($policy['_text'],$policy['_dynamic_table'],$policy['_declaration_client']);unset($policy);
-    return $job;
+    if($internal){$job['presentation']=gca_presentation($job);$job['is_internal']=true;return $job;}
+    return gca_public_view($job);
 }
 function gca_start($request) {
     $url=gca_normalize_url($request->get_param('url'));

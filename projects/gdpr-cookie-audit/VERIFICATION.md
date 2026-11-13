@@ -301,3 +301,45 @@ keeps external document integrations outside target service scope. Final full su
 lint and diff --check passed. Runtime/browser measurement is now working; prior blocked entries
 above describe historical releases, not final state. Scope remains bounded snapshots and recognized
 controls, not an exhaustive legal certification.
+
+
+## Approved responsive dashboard, 2.1.1 — 2026-11-13
+
+Imported the SHA256-verified production 2.0.1 baseline before redesign; archive,
+worker, internal PDF and method2.0 presentation changes already live are preserved.
+Baseline release SHA256: 3ff2742549446cf42c3af8f61cb6715ff404d53ebf857cd04f2cc0011ed29b71.
+New pure view builder and scoped dashboard stylesheet implement the approved design.
+Overall score, severity counts, four scored areas, priorities, shared-scale stacked
+cookie bars and small enlargeable screenshots replace the previous public data dump.
+Public technical evidence remains redacted; internal detail PDF remains available to
+administrators. Incomplete health is never invented: explicit coverage replaces a
+health percentage when overall grading is unavailable. Loading/resuming jobs keep
+progress visible, including owner reload and retry.
+
+Full regression suite: 181 PHP PASS assertions (including repeated WP assertions),
+46 Node tests, zero failures. Projection tests cover category sums, missing versus
+observed-empty phases, privacy, coverage and severity. Four view tests cover scores,
+shared bar scale, incomplete reports and escaping. Two PDF tests cover compactness,
+unknown scores and long domains. Independent review identified mobile heading cascade
+and owner-resume hidden progress; both corrected. Final packaging lints every PHP/JS
+file. Final CSS-only narrow-screen correction followed by six view/PDF tests: 6 pass.
+
+Production 2.1.1 update succeeded active 2026-11-13T17:10:22Z, backup
+806e7aedd5c78ace97b2fc05084154a9. ZIP SHA256:
+f90f24fa8cbe857f094ac562bbb2565f55d500bc2cc5dfb40715749ad560b114.
+Only gdpr-cookies.cz updated.
+
+Live saved browser report reopened: 73 percent, documentation66, consent100,
+classification76, banner50; four areas evaluated, one error, two recommendations.
+Desktop CSS viewport1363: four columns and no horizontal page overflow. Browser
+DevTools is organization-disabled; responsive QA used browser zoom to exercise CSS
+viewport779 (tablet, two columns),454 (mobile, two columns, 12px area titles),340
+(small mobile). Narrow appbar wrapping corrected in2.1.1 and live340 rechecked:
+no overflowing dashboard element. This checks responsive layout, not device hardware.
+Screenshot modal opened and closed successfully. Actual public PDF downloaded through
+site button:2 A4 pages, correct73 score, four area scores and four small screenshots;
+both pages rendered and visually checked. Old source-only saved report explicitly
+shows50 percent COVERAGE,2/4 areas and no complete overall health score. Existing
+hashed URLs remain stable; no new scan was necessary for this presentation change.
+Desktop screenshot and first PDF page retained as evidence; no raw report, owner
+credential, share key, or actual measurement URL committed.
