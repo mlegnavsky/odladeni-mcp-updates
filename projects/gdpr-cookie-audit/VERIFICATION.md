@@ -343,3 +343,53 @@ shows50 percent COVERAGE,2/4 areas and no complete overall health score. Existin
 hashed URLs remain stable; no new scan was necessary for this presentation change.
 Desktop screenshot and first PDF page retained as evidence; no raw report, owner
 credential, share key, or actual measurement URL committed.
+
+
+## Live measuring screen and scoped EU cookie conditions — 2026-11-13
+
+Final2.2.2 deployed only gdpr-cookies.cz at2026-11-13T17:29:40Z. Backup
+e7e8984c7671c39e47f13a771752bbd7; ZIP SHA256
+3c3233ee0bb73a95d315cc9399dd01c3d30c81a239d0e80c1e8624f96b6b7c65.
+
+Progress projection allowlists current worker stages, counts completed source pages
+and distinct browser results. No elapsed-time synthetic measurements. Animated
+cookie/ring, current Czech activity and light humor, four-step checklist, queued
+and paused copy, reduced motion. Results hidden until terminal archive state.
+Owner reload resumes same ID; shared polling remains read-only; running comparison
+is rejected; admin running view polls authenticated route. Start is labeled as
+starting rather than prematurely claiming documents complete.
+
+Separate16-condition EU cookie assessment uses GDPR consent and ePrivacy conditions
+with links to EUR-Lex, EDPB Cookie Banner Taskforce and UOOU Q&A. Source references
+and scope recorded in design doc and public assessment. Tests distinguish observed
+consent violations, missing documentation, unknown measurement and scoped passes.
+High average scores cannot override violations; WCAG contrast alone is not declared
+an EU legal breach; Google Consent Mode is not a universal legal requirement.
+Known-purpose storage, exclusive category choice and post-reload persistence all
+contribute. Unknown purposes prevent complete positive verdict. No whole-GDPR or
+legal certification claim. Existing method2.0 area scores preserved independently.
+
+Worker now observes first-layer accept/reject (native/role buttons and input values)
+and default optional switches before changing them. Standard CMP structure is needed
+for a definitive absence finding; unsupported custom structure remains unknown.
+CookieYes custom optional categories are enumerated by prefix; necessary switches
+excluded explicitly. Checked disabled optional switches are not silently excluded;
+unsupported preference switches prevent a false positive assessment. Sandbox,
+network proxy and process deadlines unchanged.
+
+Independent reviewer found missing storage/category/persistence legal gates, partial
+control selectors, interrupted saved-owner retry, comparison/admin polling and asset
+version risks. Corrected all. Full suite202 PHP PASS assertions and52 Node tests,
+zero failures. Final presentation-only starting copy/PDF block adjustment: five scan
+and PDF tests pass; package lints every PHP/JS file; git diff --check clean.
+
+Live2.2.0 new scan of existing requested targetwww.stranapro.cz completed successfully
+with genuine browser measurements. Observed progress30,65,75 and changing activities;
+result container hidden during scan. Reload at65 resumed same canonical hash and75,
+no extra measurement. Responsive CSS viewport454 had no horizontal overflow and still
+hid results. Final result auto appeared; progress hidden,13/16 EU conditions evidenced,
+first-layer rejection/default-off checks both passed. Legacy report correctly lacks
+these two new observations. Final2.2.2 reloaded same saved result and loaded versioned
+assets. PDF downloaded through real site button,3 A4 pages; final EU section kept
+whole on page3 and rendered/visually inspected. Evidence images committed; actual
+measurement URL/owner key/raw snapshots deliberately omitted.

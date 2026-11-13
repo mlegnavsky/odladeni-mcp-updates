@@ -26,3 +26,9 @@ function finalizeScenarios(report,google){const expected=['before','contrast','r
 Object.assign(module.exports,{consentChoices,withdrawalConfirmed,exclusiveChoice,pageAvailable,finalizeScenarios});
 function mobileResult(measurement,known){if(!measurement)return {id:'mobile',title:'Lišta na mobilu',status:known?'error':'unknown',evidence:known?'Cookie lišta rozpoznaná na počítači nebyla v mobilním okně během pozorování viditelná. Viz skutečný snímek mobilu.':'Lištu se na mobilu nepodařilo rozpoznat; bez znalosti jejího typu nelze její nepřítomnost potvrdit.'};const r=measurement.rect,v=measurement.viewport,fits=r.x>=-1&&r.y>=-1&&r.x+r.width<=v.width+1&&r.y+r.height<=v.height+1;return {id:'mobile',title:'Lišta na mobilu',status:fits?'pass':'error',evidence:fits?'Rozpoznaná lišta se vejde do okna390×844px.':'Rozpoznaná lišta přesahuje viditelnou oblast mobilního okna.',measurement:r};}
 module.exports.mobileResult=mobileResult;
+
+function initialChoiceResults(m){
+ const known=m.banner&&m.accept===true;
+ return [{id:'choice-design',title:'Odmítnutí v první vrstvě lišty',status:!known?'unknown':m.reject?'pass':m.complete?'error':'unknown',evidence:!known?'První vrstva s přijetím nebyla spolehlivě rozpoznána.':m.reject?'Přijetí i odmítnutí jsou viditelné v první vrstvě rozpoznané lišty.':'V první vrstvě rozpoznáno přijetí; viditelná možnost odmítnutí nebyla nalezena.'},{id:'default-choice',title:'Výchozí volitelné kategorie',status:m.toggles?.some(t=>t.checked)?'error':!m.toggles?.length||m.unrecognized?'unknown':'pass',evidence:!m.toggles?.length?'Výchozí volitelné přepínače nebyly spolehlivě rozpoznány.':'Před změnou kategorií zkontrolováno '+m.toggles.length+' volitelných přepínačů; předem zapnuto '+m.toggles.filter(t=>t.checked).length+'.'}];
+}
+module.exports.initialChoiceResults=initialChoiceResults;

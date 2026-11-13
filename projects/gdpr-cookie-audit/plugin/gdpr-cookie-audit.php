@@ -2,7 +2,7 @@
 /**
  * Plugin Name: GDPR Cookies – bezplatný audit webu
  * Description: Přehledná kontrola cookies, zdrojových integrací a zásad cookies s PDF zprávou.
- * Version: 2.1.1
+ * Version: 2.2.2
  * Requires PHP: 8.0
  * Author: Martin Legnavsky
  * Update URI: https://plaginy.odladeni.cz/gdpr-cookie-audit
@@ -11,15 +11,17 @@
 if (!defined('ABSPATH')) exit;
 require_once __DIR__.'/core.php';
 require_once __DIR__.'/runtime.php';
-define('GCA_VERSION','2.1.1');
+define('GCA_VERSION','2.2.2');
 require_once __DIR__.'/archive.php';
 require_once __DIR__.'/browser.php';
+require_once __DIR__.'/compliance.php';
 require_once __DIR__.'/presentation.php';
 
 function gca_asset_url($file) { return plugins_url('assets/'.$file,__FILE__); }
 function gca_enqueue() {
     wp_enqueue_style('gca-audit',gca_asset_url('audit.css'),[],GCA_VERSION);
     wp_enqueue_style('gca-dashboard',gca_asset_url('dashboard.css'),['gca-audit'],GCA_VERSION);
+    wp_enqueue_script('gca-scan',gca_asset_url('scan.js'),[],GCA_VERSION,true);
     wp_enqueue_script('gca-view',gca_asset_url('view.js'),[],GCA_VERSION,true);
     wp_enqueue_script('gca-pdf',gca_asset_url('jspdf.umd.min.js'),[],GCA_VERSION,true);
     wp_enqueue_script('gca-font',gca_asset_url('font.js'),['gca-pdf'],GCA_VERSION,true);
@@ -27,7 +29,7 @@ function gca_enqueue() {
     wp_enqueue_script('gca-pdf-export',gca_asset_url('pdf.js'),['gca-font','gca-model'],GCA_VERSION,true);
     wp_enqueue_script('gca-pdf-detail',gca_asset_url('pdf-detail.js'),['gca-pdf-export'],GCA_VERSION,true);
     wp_enqueue_script('gca-history',gca_asset_url('history.js'),[],GCA_VERSION,true);
-    wp_enqueue_script('gca-audit',gca_asset_url('audit.js'),['gca-pdf-export','gca-history','gca-view'],GCA_VERSION,true);
+    wp_enqueue_script('gca-audit',gca_asset_url('audit.js'),['gca-pdf-export','gca-history','gca-view','gca-scan'],GCA_VERSION,true);
     if(current_user_can('manage_options'))wp_localize_script('gca-audit','GCAAdmin',['nonce'=>wp_create_nonce('wp_rest')]);
 }
 add_action('wp_enqueue_scripts',function(){if(is_page('kontrola-cookies'))gca_enqueue();});
