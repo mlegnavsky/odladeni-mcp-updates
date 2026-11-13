@@ -16,6 +16,7 @@ function buildPdf(report){
  text(report.url,13,'blue',4);
  text('Měření: '+new Date(report.started_at).toLocaleString('cs-CZ'),10,'muted');
  text('ID: '+(report.id||'neuvedeno')+(report.storage==='permanent'?' | Trvale uloženo v historii':''),9,'muted');
+ if(report.report_url)text('Trvalá adresa měření: '+report.report_url,8,'blue');
  text('Stav: '+({complete:'zdrojová kontrola dokončena',partial:'částečný výsledek',failed:'kontrolu se nepodařilo provést',running:'nedokončená kontrola'}[report.state]||report.state),10,'muted');
  text('Rozsah: '+(report.pages||[]).length+' načtených stránek, '+s.cookiePolicies.length+' dokumentů. Verze metodiky 1.1.',10,'muted');
  rule();
@@ -61,6 +62,10 @@ function buildPdf(report){
  score.criteria.forEach(c=>text((c.status==='pass'?'1 / 1':c.status==='unknown'?'Nedostupné':'0 / 1')+' | '+c.label+' | '+root.GCAModel.policyOutcomeLabel(c),9,c.status));
  title('Podrobné nálezy a doporučené kroky');
  s.findings.forEach((f,i)=>{space(24);text((i+1)+'. '+f.title,12,f.status);text(labels[f.status],8,f.status);text('Zjištění: '+f.evidence,9);text('Doporučení: '+f.fix,9,'muted');if(f.url)text('Stránka: '+f.url,8,'blue');rule();});
+ title('Skutečně pozorované cookies a úložiště');
+ text('Technické testy bez nálezu: '+(s.browserScore.percent===null?'bez hodnocení':s.browserScore.percent+' %')+' | '+s.browserScore.passed+' / '+s.browserScore.total+' provedených testů | nedokončeno '+s.browserScore.unavailable,10);
+ for(const observation of report.browser?.observations||[]){title('Scénář: '+observation.phase);for(const cookie of observation.cookies)text(cookie.name+' | '+cookie.domain+' | '+cookie.category+' | '+cookie.lifetime,8);for(const item of observation.storage)text(item.type+' | '+item.name+' | '+item.origin,8,'muted');for(const request of observation.requests.filter(r=>r.category!=='resource'))text(request.method+' '+request.url+' | '+request.category,8,'blue');}
+ for(const image of report.browser?.screenshots||[]){if(!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(image.data_url||''))continue;title(image.title);const properties=doc.getImageProperties(image.data_url),width=Math.min(178,100*properties.width/properties.height),height=width*properties.height/properties.width;space(height+10);doc.addImage(image.data_url,'JPEG',16,y,width,height);y+=height+8;}
  title('Prohlížečové scénáře');
  if(!s.scenarios.length)text(report.browser?.reason||'V tomto měření neprovedeno. Chování souhlasu a JavaScriptových cookies nebylo ověřeno.',10,'unknown');
  s.scenarios.forEach(x=>{text(x.title+' — '+(labels[x.status]||x.status),12,x.status);text(x.evidence||x.reason||'',9);});

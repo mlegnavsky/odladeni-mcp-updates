@@ -65,3 +65,5 @@ check(gca_policy_discovery(['state'=>'complete','pages'=>[$page],'policies'=>[],
 $page=gca_analyze_page('https://example.com/','<main>'.str_repeat('Veřejně dostupný obsah webu. ',5).'</main><a href="/cookie-policy?lang=cs">Cookie policy</a>');
 check(($page['policy_link_issues'][0]['reason']??'')==='unsupported','query policy is unsupported, not a broken placeholder');
 check(gca_policy_discovery(['state'=>'complete','pages'=>[$page],'policies'=>[],'errors'=>[]])['status']==='unavailable','unsupported policy URL cannot produce a false zero');
+$p=gca_analyze_policy('https://example.com/cookies/','<table><tr><th>Soubor cookie</th><th>Doba trvání</th><th>Popis</th></tr><tr><td>_ga_*</td><td>1 rok</td><td>Analytické cookies Google Analytics</td></tr></table>',[],[['name'=>'_ga_ABC123','basis'=>'browser','url'=>'https://example.com/']]);
+check($p['cookies'][0]['status']==='pass','observed GA cookie is matched against an explicitly documented wildcard');

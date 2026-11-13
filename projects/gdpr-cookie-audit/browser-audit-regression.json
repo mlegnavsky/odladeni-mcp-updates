@@ -1,0 +1,145 @@
+{
+  "version": "1.9.2",
+  "browser_verified_version": "1.9.1",
+  "url": "https://www.stranapro.cz/",
+  "state": "complete",
+  "storage": "permanent",
+  "sandbox": {
+    "sandbox": true,
+    "sandbox_mode": "seccomp",
+    "content_processes": 2
+  },
+  "results": [
+    {
+      "id": "before",
+      "status": "pass"
+    },
+    {
+      "id": "contrast",
+      "status": "pass"
+    },
+    {
+      "id": "reject",
+      "status": "pass"
+    },
+    {
+      "id": "persistence",
+      "status": "pass"
+    },
+    {
+      "id": "accept",
+      "status": "pass"
+    },
+    {
+      "id": "withdraw",
+      "status": "pass"
+    },
+    {
+      "id": "analytics",
+      "status": "pass"
+    },
+    {
+      "id": "marketing",
+      "status": "pass"
+    },
+    {
+      "id": "mobile",
+      "status": "error"
+    },
+    {
+      "id": "consent-mode",
+      "status": "pass"
+    },
+    {
+      "id": "storage",
+      "status": "pass"
+    }
+  ],
+  "observations": [
+    {
+      "phase": "before",
+      "cookies": [
+        "cookieyes-consent"
+      ],
+      "storage_entries": 4,
+      "requests": 139
+    },
+    {
+      "phase": "reject",
+      "cookies": [
+        "cookieyes-consent"
+      ],
+      "storage_entries": 4,
+      "requests": 2
+    },
+    {
+      "phase": "persistence",
+      "cookies": [
+        "cookieyes-consent"
+      ],
+      "storage_entries": 4,
+      "requests": 139
+    },
+    {
+      "phase": "accept",
+      "cookies": [
+        "cookieyes-consent",
+        "_ga_0SB20H9LHP",
+        "_ga"
+      ],
+      "storage_entries": 4,
+      "requests": 147
+    },
+    {
+      "phase": "withdraw",
+      "cookies": [
+        "cookieyes-consent"
+      ],
+      "storage_entries": 4,
+      "requests": 1
+    },
+    {
+      "phase": "analytics",
+      "cookies": [
+        "cookieyes-consent",
+        "_ga_0SB20H9LHP",
+        "_ga"
+      ],
+      "storage_entries": 4,
+      "requests": 143
+    },
+    {
+      "phase": "marketing",
+      "cookies": [
+        "cookieyes-consent"
+      ],
+      "storage_entries": 4,
+      "requests": 141
+    }
+  ],
+  "screenshots": 4,
+  "documented_observed_cookies": [
+    {
+      "name": "cookieyes-consent",
+      "basis": "browser",
+      "status": "pass"
+    },
+    {
+      "name": "_ga_0SB20H9LHP",
+      "basis": "browser",
+      "status": "pass"
+    },
+    {
+      "name": "_ga",
+      "basis": "browser",
+      "status": "pass"
+    }
+  ],
+  "canonical_url_reopen_verified": true,
+  "distinct_same_site_hashes_verified": true,
+  "pdf_verified": true,
+  "tests": {
+    "php_assertions_including_repeats": 166,
+    "node_tests": 41
+  }
+}

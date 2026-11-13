@@ -94,3 +94,4 @@ test('missing cookie document in a completed bounded crawl scores zero with a co
  r.policy_discovery.status='unavailable';assert.equal(model.summarize(r).documentationScore.percent,null);
  r.state='running';r.policy_discovery.status='pending';assert.equal(model.summarize(r).documentationScore.percent,null);
 });
+test('failed browser run cannot claim a completed100 percent technical score',()=>{const s=model.summarize({pages:[],policies:[],browser:{status:'failed',reason:'HTTP403',results:[{id:'before',status:'pass'},{id:'reject',status:'unknown'}]}});assert.equal(s.browserScore.percent,null);assert.equal(s.browserScore.unavailable,1);});

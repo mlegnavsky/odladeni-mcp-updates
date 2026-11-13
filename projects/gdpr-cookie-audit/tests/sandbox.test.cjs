@@ -14,3 +14,9 @@ test('only web content tabs are subject to the content-process sandbox check',()
  assert.equal(webContentCommand(['firefox','-contentproc','-parentBuildID','1234','tab',''].join('\0')),true);
  assert.equal(webContentCommand(['firefox','-contentproc','-parentBuildID','1234','socket',''].join('\0')),false);
 });
+test('sandbox traversal includes children created by non-main browser threads',()=>{
+ const {descendantProcesses}=require('../plugin/runtime/sandbox.cjs');assert.equal(typeof descendantProcesses,'function');
+ const dirs={'/proc/10/task':['10'],'/proc/20/task':['20','21'],'/proc/30/task':['30']};
+ const files={'/proc/10/task/10/children':'20','/proc/20/task/20/children':'','/proc/20/task/21/children':'30','/proc/30/task/30/children':''};
+ const pids=descendantProcesses(10,{readdirSync:p=>dirs[p]||[],readFileSync:p=>files[p]||''});assert.deepEqual(pids.sort(),['20','30']);
+});

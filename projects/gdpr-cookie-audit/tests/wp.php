@@ -7,7 +7,7 @@ function set_transient($k,$v,$ttl){global $store;$store[$k]=$v;return true;}
 function get_option($k,$d=false){global $options;return $options[$k]??$d;}
 function add_option($k,$v,...$x){global $options;if(isset($options[$k]))return false;$options[$k]=$v;return true;}
 function delete_option($k){global $options;unset($options[$k]);}
-function home_url(){return 'https://example.com';}
+function home_url($path=''){return 'https://example.com'.$path;}
 class WP_Error{public $data;public function __construct(...$v){$this->data=$v;}}
 require __DIR__.'/../plugin/gdpr-cookie-audit.php';
 function check($v,$m){if(!$v)throw new Exception($m);echo "PASS $m\n";}

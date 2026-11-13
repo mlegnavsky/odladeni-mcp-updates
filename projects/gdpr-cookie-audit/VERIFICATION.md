@@ -236,3 +236,68 @@ assertions (includes7 rerun WP assertions via archive test),29 Node tests. PHP/J
 and git diff --check pass. UI assets identical between tested1.7.1 and final1.7.2 except version.
 
 Final live status (cache-busted GET) confirms1.7.2, archive_ready:true and archive_import_complete:true at2026-11-13T15:09Z. Bare status URL had an older cached1.7.1 response; final verification used explicit cache bypass.
+
+
+## Unique report URLs and actual isolated browser audit — 2026-11-13
+
+Final deployed1.9.2 SHA256a6385e0f798ca1f1247c61f5de8a1d94d7b7b80fab7137722bfa357600951991.
+Final update backup e2aa5587123cba6b103742f8ed33cbd3. Active only on gdpr-cookies.cz.
+
+Every report now has canonical /kontrola-cookies/?mereni=<64hex> URL. Opaque key is HMAC
+of measurement ID with its stored per-job secret hash; lookup uses indexed SHA256 digest.
+Schema2 verifies column AND index before marking migration complete. Bounded backfill for
+archived reports confirmed live. Owner token remains distinct; shared-report route only reads,
+never starts or resumes a scan. All audit pages send no-referrer/no-store; result URLs additionally
+send X-Robots-Tag:noindex,nofollow (SEO plugin's HTML robots alone did not honor wp_robots).
+Old owner fragments still work. Failed local storage preserves owner fragment for resumability;
+share control/PDF expose canonical read-only URL. Key values deliberately omitted from Git.
+
+Resolved runtime blocker, not by reducing security: original probe read only the main thread's
+/proc children. Firefox spawns on other threads. Traversal now enumerates every task's children.
+Live probe verified2 content processes, same nonrootUID, NoNewPrivs1, CapEff0, Seccomp2,
+and filter count above Node's inherited baseline. Firefox default content sandbox remains enabled.
+
+New detached worker verifies sandbox before navigating untrusted URLs, through existing pinned
+public-only proxy. WebRTC disabled; service workers blocked; arbitrary schemes/credentials/ports
+rejected; per-proxy50MB transport and connection limits. One browser job at a time via owner-bound
+atomic DB lock;145s independent process-group kill deadline includes graceful cleanup. Private
+job files outside document root. Asynchronous PHP polling/cron collects progress into permanent
+archive. Source-only failures remain failures; browser failures retain valid source results aspartial.
+
+Real scenarios: pre-choice, reject, reload/persistence, accept, withdraw, analytics-only,
+marketing-only, mobile390x844, desktop text contrast, storage names, observed Consent Mode v2
+calls. Known CookieYes/Cookiebot/OneTrust/Complianz controls plus bounded exact-text fallback.
+Unsupported/unverifiable interactions remain unknown, not fabricated passes. Cookies/requests
+are observed rather than inferred from source. Cookie/storage values not persisted; request query
+values stripped except boolean recognized denied signal. Consent checks compare category states,
+not cookie timestamps. Cookie documentation is re-compared against actual observed cookie names;
+explicit documented wildcards match generated GA4 names. Technical score displayed separately
+from documentation/declaration score, with exact passed/total/unavailable counts.
+
+Live1.9.0 and1.9.1 scans of https://www.stranapro.cz/ each completed5 source pages and actual
+Firefox scenarios. Distinct IDs f02968e295ab6dc4e1a9a353588bb3f4 and f1363c59ade345eeb7310ab9f9d72db9,
+distinct opaque URL hashes for same site. Both archived and reopenable; final1.9.1 result opened
+through shared-report POST without owner token, then browser reload restored identical ID.
+Final report:11 tests,10pass/1error (mobile banner not visible),0unfinished.7 observation states,
+4 JPEG screenshots. Before/reject/reload: cookieyes-consent only. Accept/analytics-only: also
+_ga_0SB20H9LHP and_ga. Withdraw/marketing-only: consent cookie only. Actual three cookie names
+matched documented inventory, including_ga_* wildcard. Consent Mode four states denied before,
+granted after. Desktop5 contrast samples passed. Mobile screenshot shows notification prompt and
+no recognized cookie banner; final rule reports that measured visibility issue explicitly.
+
+PDF downloaded for final result, all actual cookie names, persistent URL,91% technical score and
+mobile finding verified.24-page1.9.0 export first page and screenshot page rendered/visually checked;
+final1.9.1 export parsed and includes revised findings. Final1.9.2 only balances UI cards and colors.
+Browser verified final1.9.2 restored report, balanced cards and phase counts; proof screenshot
+in evidence/browser-results-v1.9.2.jpg. No raw report, owner credential, share key or full source
+page copies are committed.
+
+Reviews: URL referrer leakage, schema-failure flag and blocked-storage resume reproduced/fixed.
+Worker review findings reproduced/fixed: timestamp-only withdrawal, unverified exclusive-category
+choices, HTTP-denied/empty pages producing passes, omitted aborted tests/hidden reason, and
+shutdown defeating deadline. Added forced SIGKILL child-process test. Browser-cookie reassessment
+keeps external document integrations outside target service scope. Final full suite166 PHP assertions
+(includes14 repeated WP assertions across archive/browser tests),41 Node tests passed. PHP/JS package
+lint and diff --check passed. Runtime/browser measurement is now working; prior blocked entries
+above describe historical releases, not final state. Scope remains bounded snapshots and recognized
+controls, not an exhaustive legal certification.

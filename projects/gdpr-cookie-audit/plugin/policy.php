@@ -23,6 +23,9 @@ function gca_policy_inventory($text,$cookies){
     }
     return array_slice(array_values(array_unique($names)),0,100);
 }
+function gca_cookie_documented($name,$names){
+    foreach($names as $documented){$pattern=str_replace('\\*','[A-Za-z0-9_-]*',preg_quote($documented,'~'));if(preg_match('~^'.$pattern.'$~i',$name))return true;}return false;
+}
 function gca_policy_excerpt($block,$pattern){
     if(preg_match($pattern,$block,$m)&&preg_match('~.{0,90}'.preg_quote($m[0],'~').'.{0,160}~isu',$block,$excerpt))return trim($excerpt[0]);
     preg_match('~^.{0,320}~su',$block,$m);return $m[0]??'';
@@ -60,7 +63,7 @@ function gca_analyze_policy($url,$html,$serviceIds=[],$cookies=[]){
     $out=['url'=>$url,'checks'=>$checks,'services'=>[],'cookies'=>[],'text_length'=>strlen($text),'text_truncated'=>strlen($text)>=149996];$catalog=gca_provider_catalog();
     $available=$checks['purposes']['outcome']!=='unavailable';
     foreach(array_unique($serviceIds) as $id){if(!isset($catalog[$id]))continue;$p=$catalog[$id];$found=preg_match($p[3],$text,$m);$out['services'][]=['id'=>$id,'name'=>$p[0],'status'=>!$available?'unknown':($found?'pass':'error'),'source_url'=>$url,'evidence'=>!$available?'Dokument nebyl dostupný pro kontrolu zmínky o službě.':($found?'V dokumentaci nalezena zmínka: '.$m[0]:'Služba nalezena ve zdroji webu, v kontrolované cookie dokumentaci nenalezena.')];}
-    foreach($cookies as $c)$out['cookies'][]=['name'=>$c['name'],'status'=>!$available?'unknown':(in_array($c['name'],$names,true)?'pass':'error')];
+    foreach($cookies as $c)$out['cookies'][]=['name'=>$c['name'],'basis'=>$c['basis']??'http-header','status'=>!$available?'unknown':(gca_cookie_documented($c['name'],$names)?'pass':'error')];
     return $out;
 }
 function gca_analyze_policy_documents($documents,$serviceIds=[],$cookies=[],$declarations=[]){

@@ -16,9 +16,10 @@ const watchdog=setTimeout(()=>{status('blocked','installation_timeout');process.
  try{
   status('installing','browser_library');
   const npm=path.join(base,nodeFolder,'lib/node_modules/npm/bin/npm-cli.js');
-  await run(process.execPath,[npm,'install','--prefix',base,'--no-audit','--no-fund','--ignore-scripts','--save-exact','playwright-core@'+version],env);
+  let installedVersion;try{installedVersion=JSON.parse(fs.readFileSync(path.join(base,'node_modules/playwright-core/package.json'),'utf8')).version;}catch{}
+  if(installedVersion!==version)await run(process.execPath,[npm,'install','--prefix',base,'--no-audit','--no-fund','--ignore-scripts','--save-exact','playwright-core@'+version],env);
   status('installing','firefox_download');
-  await run(process.execPath,[path.join(base,'node_modules/playwright-core/cli.js'),'install','firefox'],env);
+  if(!fs.existsSync(path.join(base,'browsers'))||!fs.readdirSync(path.join(base,'browsers')).some(f=>/^firefox-\d+$/.test(f)))await run(process.execPath,[path.join(base,'node_modules/playwright-core/cli.js'),'install','firefox'],env);
   process.env.PLAYWRIGHT_BROWSERS_PATH=env.PLAYWRIGHT_BROWSERS_PATH;
   process.env.LD_LIBRARY_PATH=env.LD_LIBRARY_PATH;
   const {firefox}=require(path.join(base,'node_modules/playwright-core'));
