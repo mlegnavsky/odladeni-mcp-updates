@@ -6,3 +6,8 @@ test('uses the hosting distribution and only validated browser library packages'
  assert.throws(()=>dependencyPackages({'ubuntu22.04-x64':{chromium:['libnspr4;evil']}},'ubuntu22.04-x64'),/package/i);
  assert.throws(()=>platformKey('ID=unknown\nVERSION_ID=1'),/unsupported/i);
 });
+
+test('Firefox dependencies are validated as fixed library package names',()=>{
+ assert.deepEqual(dependencyPackages({'ubuntu22.04-x64':{firefox:['libgtk-3-0','fonts-x']}},'ubuntu22.04-x64','firefox'),['libgtk-3-0']);
+ assert.throws(()=>dependencyPackages({},'ubuntu22.04-x64','shell'),/unsupported/i);
+});

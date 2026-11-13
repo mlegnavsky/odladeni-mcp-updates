@@ -103,15 +103,16 @@ function gca_analyze_page($url,$html,$setCookies=[],$status=200) {
     $result['consent_hint']=(bool)preg_match('~(?:gtag\s*\(\s*["\x27]consent|ad_storage|analytics_storage|ad_user_data|ad_personalization)~i',$html);
     return $result;
 }
+require_once __DIR__.'/declarations.php';
 require_once __DIR__.'/policy.php';
-function gca_request($url) {
+function gca_request($url,$timeout=9) {
     if (!function_exists('curl_init')) throw new RuntimeException('Hosting nepodporuje bezpečné načítání webu.');
         $host=parse_url($url,PHP_URL_HOST); $records=dns_get_record($host,DNS_A|DNS_AAAA);$ips=[];
         foreach ((array)$records as $record) { $ip=$record['ip']??$record['ipv6']??null;if (!$ip) continue;if (!gca_public_ip($ip)) throw new RuntimeException('Adresa směřuje do neveřejné sítě.');$ips[]=$ip; }
         if (!$ips) throw new RuntimeException('Doménu se nepodařilo přeložit.');
         $ip=$ips[0];$port=parse_url($url,PHP_URL_SCHEME)==='https'?443:80;
         $body='';$headers=[];$overflow=false;$ch=curl_init($url);
-        curl_setopt_array($ch,[CURLOPT_PROXY=>'',CURLOPT_RESOLVE=>[$host.':'.$port.':'.(strpos($ip,':')!==false?'['.$ip.']':$ip)],CURLOPT_FOLLOWLOCATION=>false,CURLOPT_CONNECTTIMEOUT=>4,CURLOPT_TIMEOUT=>9,CURLOPT_SSL_VERIFYPEER=>true,CURLOPT_SSL_VERIFYHOST=>2,CURLOPT_USERAGENT=>'GDPR-Cookies.cz Audit/1.0 (+https://gdpr-cookies.cz/kontrola-cookies/)',CURLOPT_HTTPHEADER=>['Accept: text/html,application/xhtml+xml'],CURLOPT_ENCODING=>'',CURLOPT_PROTOCOLS=>CURLPROTO_HTTP|CURLPROTO_HTTPS,
+        curl_setopt_array($ch,[CURLOPT_PROXY=>'',CURLOPT_RESOLVE=>[$host.':'.$port.':'.(strpos($ip,':')!==false?'['.$ip.']':$ip)],CURLOPT_FOLLOWLOCATION=>false,CURLOPT_CONNECTTIMEOUT=>4,CURLOPT_TIMEOUT=>max(1,min(9,(int)$timeout)),CURLOPT_SSL_VERIFYPEER=>true,CURLOPT_SSL_VERIFYHOST=>2,CURLOPT_USERAGENT=>'GDPR-Cookies.cz Audit/1.0 (+https://gdpr-cookies.cz/kontrola-cookies/)',CURLOPT_HTTPHEADER=>['Accept: text/html,application/xhtml+xml'],CURLOPT_ENCODING=>'',CURLOPT_PROTOCOLS=>CURLPROTO_HTTP|CURLPROTO_HTTPS,
           CURLOPT_WRITEFUNCTION=>function($ch,$chunk) use (&$body,&$overflow) { if (strlen($body)+strlen($chunk)>2097152) { $overflow=true;return 0; }$body.=$chunk;return strlen($chunk); },
           CURLOPT_HEADERFUNCTION=>function($ch,$line) use (&$headers) { $p=explode(':',$line,2);if(count($p)===2)$headers[strtolower(trim($p[0]))][]=trim($p[1]);return strlen($line); },
         ]);

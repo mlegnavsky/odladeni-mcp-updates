@@ -17,8 +17,8 @@ function gca_policy_inventory($text,$cookies){
     preg_match_all('~(?<![\w.-])(?:_ga(?:_[A-Z0-9]+)?|_gid|_fbp|cookieyes-consent|wordpress_logged_in_[*a-z0-9]*|PHPSESSID)(?![\w.-])~i',$text,$m);$names=array_merge($names,$m[0]);
     $table=false;
     foreach(explode("\n",$text) as $line){
-        if(str_contains($line,'|')&&preg_match('~název|cookie name|^name\s*\||^cookie\s*\|~iu',$line)&&preg_match('~účel|purpose|platnost|duration|expir|provider|poskytovatel~iu',$line)){$table=true;continue;}
-        if($table&&str_contains($line,'|')){$name=trim(explode('|',$line)[0]);if(preg_match('~^[a-zA-Z_][a-zA-Z0-9_.*-]{1,79}$~',$name)&&!preg_match('~^(name|cookie|cookies|purpose|provider|category|duration)$~i',$name))$names[]=$name;}
+        if(str_contains($line,'|')&&preg_match('~název|cookie name|^name\s*\||^cookie\s*\||soubor\s+cookie~iu',$line)&&preg_match('~účel|purpose|platnost|duration|doba|popis|description|expir|provider|poskytovatel~iu',$line)){$table=true;continue;}
+        if($table&&str_contains($line,'|')){$name=trim(explode('|',$line)[0]);if(preg_match('~^[a-zA-Z_][a-zA-Z0-9_.*:-]{1,159}$~',$name)&&!preg_match('~^(name|cookie|cookies|purpose|provider|category|duration)$~i',$name))$names[]=$name;}
         elseif(!str_contains($line,'|'))$table=false;
     }
     return array_slice(array_values(array_unique($names)),0,100);
@@ -36,7 +36,7 @@ function gca_analyze_policy($url,$html,$serviceIds=[],$cookies=[]){
     $checks=[];
     $rules=[
       'purposes'=>['Účely používání cookies','~analytick|marketing|nezbytn|přihláš|měření návštěv|personaliz|purposes?|necessary|advertising|analytics|login~iu',null,'Účel používání cookies','Popište účely jednotlivých kategorií cookies a přiřaďte je ke skutečně používaným cookies.'],
-      'retention'=>['Platnost a životnost cookies','~\d+\s*(?:sekund|minut|hodin|dní|dnů|dny|měsíc|rok|let|seconds?|minutes?|hours?|days?|months?|years?)|(?:do|při|po)\s+(?:zavření|uzavření|ukončení)\s+(?:prohlížeče|relace)|po dobu (?:relace|návštěvy)|(?<![\w.-])session(?![\w.-])~iu',null,'Konkrétní doba platnosti cookies','Doplňte u cookies dobu platnosti, případně údaj, že zanikají ukončením relace.'],
+      'retention'=>['Platnost a životnost cookies','~\d+\s*(?:sekund|minut|hodin|dní|dnů|dny|měsíc|rok|let|seconds?|minutes?|hours?|days?|months?|years?)|(?:do|při|po)\s+(?:zavření|uzavření|ukončení)\s+(?:prohlížeče|relace)|po dobu (?:relace|návštěvy)|(?<![\w.:-])(?:session|relace)(?![\w.:-])|nikdy nevyprší~iu',null,'Konkrétní doba platnosti cookies','Doplňte u cookies dobu platnosti, případně údaj, že zanikají ukončením relace.'],
       'withdrawal'=>['Změna a odvolání souhlasu s cookies','~odvolat|odvolání|odvoláte|zrušit.{0,35}souhlas|změn.{0,35}(?:souhlas|rozhodnutí)|(?:rozhodnutí|volb[uy]|souhlas).{0,65}(?:upravit|změnit)|withdraw|revok|revoke~iu','~(?:nelze|nemůžete|není možné|cannot|can.t).{0,45}(?:odvol|zruš|změn|withdraw|revoke)|(?:odvolání|změna).{0,35}(?:není možn|není umožněn)~iu','Popis změny nebo odvolání souhlasu s cookies','Doplňte konkrétní postup změny a odvolání souhlasu, například přes trvale dostupné Nastavení cookies.'],
       'choice'=>['Odmítnutí volitelných cookies','~odmítn|nesouhlas|reject|decline|pouze nezbytné|jen nezbytné~iu','~(?:nelze|nemůžete|není možné|cannot|can.t).{0,45}(?:odmítn|reject|decline)|odmítnutí.{0,35}(?:není možn|není umožněn)~iu','Popis odmítnutí volitelných cookies','Popište možnost odmítnutí volitelných cookies a jak ji návštěvník použije.'],
     ];
@@ -63,14 +63,21 @@ function gca_analyze_policy($url,$html,$serviceIds=[],$cookies=[]){
     foreach($cookies as $c)$out['cookies'][]=['name'=>$c['name'],'status'=>!$available?'unknown':(in_array($c['name'],$names,true)?'pass':'error')];
     return $out;
 }
-function gca_analyze_policy_documents($documents,$serviceIds=[],$cookies=[]){
+function gca_analyze_policy_documents($documents,$serviceIds=[],$cookies=[],$declarations=[]){
+    foreach($documents as &$document){
+        if(!empty($document['_dynamic_table'])){
+            $rows=array_values(array_filter($declarations,fn($r)=>$r['client']===($document['_declaration_client']??'')));
+            $document['_dynamic_available']=count($rows)>0;
+            if($rows)$document['_text'].="\n".gca_declaration_document($rows);
+        }
+    }unset($document);
     $results=[];foreach($documents as $document)$results[]=gca_analyze_policy($document['url'],htmlspecialchars($document['_text'],ENT_QUOTES,'UTF-8'),$serviceIds,$cookies);
     if(!$results)return null;
     $out=$results[0];$out['documents']=[];$checked=0;$incomplete=false;
     foreach($documents as $i=>$document){
-        $available=$results[$i]['checks']['purposes']['outcome']!=='unavailable';$truncated=$results[$i]['text_truncated'];
-        $out['documents'][]=['url'=>$document['url'],'text_length'=>strlen($document['_text']),'available'=>$available,'text_truncated'=>$truncated];
-        if($available)$checked++;if(!$available||$truncated)$incomplete=true;
+        $available=$results[$i]['checks']['purposes']['outcome']!=='unavailable';$truncated=$results[$i]['text_truncated'];$dynamic=$document['_dynamic_available']??true;
+        $out['documents'][]=['url'=>$document['url'],'text_length'=>strlen($document['_text']),'available'=>$available,'text_truncated'=>$truncated,'dynamic_content_available'=>$dynamic];
+        if($available)$checked++;if(!$available||$truncated||!$dynamic)$incomplete=true;
     }
     $priority=['unavailable'=>0,'missing'=>1,'not_detected'=>2,'found'=>3,'conflict'=>4];
     foreach($results as $result){

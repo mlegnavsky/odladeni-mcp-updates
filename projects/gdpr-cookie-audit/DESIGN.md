@@ -46,3 +46,7 @@ User requests no manual-verification step in cookie document results. Implement 
 ## Approved refinement: prominent documentation percentage
 
 User asks for a detailed assessment with a percentage at the beginning. Display a clearly named cookie-documentation score: equal-weight six text checks and each observed service/cookie documentation match. Show numerator, denominator and all criteria. Missing public-document information is a failed criterion with a specific fix; it is not a generic manual-verification task. Inaccessible or not-yet-inspected input must not become fabricated zero/100 or a legal claim of absence. The separate browser/appearance/consent audit remains incomplete until the hosting prerequisite is resolved.
+
+## Approved refinement: cookie categories and complete public declaration
+
+User's screenshots demonstrate a CookieYes-injected21-entry declaration that rawHTML analysis missed. The scanner must discover its public data independently. Assess each declared category (necessary, functional, analytics, performance, advertisement, other) using explicit name/domain/lifetime/purpose/classification fields, show percentage/color and row-level reasons, sum all passed/total fields in the overview. This is documentation quality, not a claim that cookies were actually set. Source and retrieval failures must remain visible; dynamically unavailable content suppresses completed document scoring. Real consent/appearance tests remain pending a viable isolated browser host.

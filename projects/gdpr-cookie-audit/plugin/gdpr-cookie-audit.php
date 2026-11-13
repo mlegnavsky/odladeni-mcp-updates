@@ -2,7 +2,7 @@
 /**
  * Plugin Name: GDPR Cookies – bezplatný audit webu
  * Description: Přehledná kontrola cookies, zdrojových integrací a zásad cookies s PDF zprávou.
- * Version: 1.5.2
+ * Version: 1.6.3
  * Requires PHP: 8.0
  * Author: Martin Legnavsky
  * Update URI: https://plaginy.odladeni.cz/gdpr-cookie-audit
@@ -11,7 +11,7 @@
 if (!defined('ABSPATH')) exit;
 require_once __DIR__.'/core.php';
 require_once __DIR__.'/runtime.php';
-define('GCA_VERSION','1.5.2');
+define('GCA_VERSION','1.6.3');
 
 function gca_asset_url($file) { return plugins_url('assets/'.$file,__FILE__); }
 function gca_enqueue() {
@@ -60,8 +60,8 @@ function gca_session($request) {
 }
 function gca_public_report($job) {
      $job['total']=count($job['queue']);
-    unset($job['token_hash'],$job['queue'],$job['ip_hash'],$job['manual_policy']);
-    foreach($job['policies'] as &$policy) unset($policy['_text']);unset($policy);
+    unset($job['token_hash'],$job['queue'],$job['ip_hash'],$job['manual_policy'],$job['_declaration_clients']);
+    foreach($job['policies'] as &$policy) unset($policy['_text'],$policy['_dynamic_table'],$policy['_declaration_client']);unset($policy);
     return $job;
 }
 function gca_start($request) {
@@ -76,7 +76,10 @@ function gca_start($request) {
     gca_unlock('start');
     if (!$ok) return gca_error('Byl dosažen limit měření. Další kontrolu zkuste přibližně za hodinu.',429);
     $id=bin2hex(random_bytes(16));$token=bin2hex(random_bytes(24));
-    $job=['id'=>$id,'token_hash'=>hash('sha256',$token),'url'=>$url,'started_at'=>gmdate('c'),'expires_at'=>time()+HOUR_IN_SECONDS,'finished_at'=>null,'state'=>'running','cursor'=>0,'manual_policy'=>$policyUrl,'queue'=>[['url'=>$url,'kind'=>'page']],'pages'=>[],'policies'=>[],'errors'=>[],'engine'=>'source','browser'=>['available'=>false,'status'=>'unverified','reason'=>'Interaktivní prohlížeč není připojen. Souhlasy, skutečné spouštění skriptů, úložiště a snímky nebyly ověřeny.'],'scope'=>5];
+    $runtime=gca_runtime_status();
+    $runtimeReasons=['sandbox_unavailable'=>'Nepodařilo se ověřit izolaci webových procesů měřicího prohlížeče. Testy přijetí, odmítnutí, skutečného úložiště a kontrastu neproběhly.','system_library_missing'=>'Na hostingu chybí knihovny potřebné ke spuštění měřicího prohlížeče.','installation_failed'=>'Měřicí prohlížeč se na hostingu nepodařilo připravit.'];
+    $browserReason=($runtime['state']??'')==='installing'?'Probíhá příprava měřicího prohlížeče. Tato kontrola zatím analyzuje veřejné dokumenty a deklarace.':(($runtime['state']??'')==='ready'?'Prohlížečové prostředí bylo ověřeno. V této verzi ještě není zapojeno měření skutečných scénářů.':($runtimeReasons[$runtime['reason']??'']??'Měřicí prohlížeč není dostupný. Skutečné interakce, úložiště a kontrast nebyly měřeny.'));
+    $job=['id'=>$id,'token_hash'=>hash('sha256',$token),'url'=>$url,'started_at'=>gmdate('c'),'expires_at'=>time()+HOUR_IN_SECONDS,'finished_at'=>null,'state'=>'running','cursor'=>0,'manual_policy'=>$policyUrl,'queue'=>[['url'=>$url,'kind'=>'page']],'pages'=>[],'policies'=>[],'errors'=>[],'declared_cookies'=>[],'declaration_sources'=>[],'declaration_errors'=>[],'_declaration_clients'=>[],'engine'=>'source','browser'=>['available'=>false,'status'=>'unverified','reason'=>$browserReason],'scope'=>5];
     set_transient('gca_job_'.$id,$job,max(1,$job['expires_at']-time()));
     return ['id'=>$id,'token'=>$token,'report'=>gca_public_report($job)];
 }
@@ -93,12 +96,18 @@ function gca_step($request) {
             $item=$job['queue'][$job['cursor']];
             try {
                 $f=gca_fetch($item['url']);$page=gca_analyze_page($f['url'],$f['html'],$f['cookies'],$f['status']);
+                $discovery=gca_cookieyes_discover($f['html']);
+                if($discovery&&($job['cursor']===0||parse_url($f['url'],PHP_URL_HOST)===parse_url($job['url'],PHP_URL_HOST))&&!isset($job['_declaration_clients'][$discovery['client']])&&count($job['_declaration_clients']??[])<2){
+                    $job['_declaration_clients'][$discovery['client']]=true;
+                    try{$declaration=gca_cookieyes_load($discovery,$f['url']);$job['declared_cookies']=array_merge($job['declared_cookies']??[],$declaration['records']);$job['declaration_sources'][]=['provider'=>'CookieYes','source_url'=>$declaration['source_url'],'source_page_url'=>$f['url'],'language'=>$declaration['language'],'records'=>count($declaration['records'])];}
+                    catch(Throwable $e){$job['declaration_errors'][]=['source_page_url'=>$f['url'],'message'=>$e->getMessage()];}
+                }
                 $page['kind']=$item['kind'];$page['is_target']=$job['cursor']===0 || parse_url($f['url'],PHP_URL_HOST)===parse_url($job['url'],PHP_URL_HOST);$job['pages'][]=$page;
                 if ($item['kind']==='policy') {
                     $ids=[];$cookies=[];foreach($job['pages'] as $p){if(empty($p['is_target']))continue;foreach($p['services'] as $s)$ids[]=$s['id'];$cookies=array_merge($cookies,$p['cookies']);}
                     $policy=gca_analyze_policy($f['url'],$f['html'],$ids,$cookies);
                     // Retain only plain text, temporarily, to compare integrations found on later pages.
-                    $policy['_text']=gca_policy_text($f['html']);$job['policies'][]=$policy;
+                    $policy['_text']=gca_policy_text($f['html']);$policy['_dynamic_table']=$discovery['table_present']??false;$policy['_declaration_client']=$discovery['client']??null;$job['policies'][]=$policy;
                 }
                 if($job['cursor']===0)$job['url']=$f['url'];
                 $job['queue']=gca_discover_queue($job['queue'],$job['cursor'],$page,$job['manual_policy']);
@@ -107,7 +116,7 @@ function gca_step($request) {
             if ($job['cursor']>=count($job['queue'])) {
                 $job['state']=empty($job['pages'])?'failed':(empty($job['errors'])?'complete':'partial');$job['finished_at']=gmdate('c');
                 $ids=[];$cookies=[];foreach($job['pages'] as $p){if(empty($p['is_target']))continue;foreach($p['services'] as $s)$ids[]=$s['id'];$cookies=array_merge($cookies,$p['cookies']);}
-                $assessment=gca_analyze_policy_documents($job['policies'],$ids,$cookies);$job['policies']=$assessment?[$assessment]:[];
+                $assessment=gca_analyze_policy_documents($job['policies'],$ids,$cookies,$job['declared_cookies']??[]);$job['policies']=$assessment?[$assessment]:[];
             }
             set_transient('gca_job_'.$id,$job,max(1,$job['expires_at']-time()));
             return gca_public_report($job);

@@ -26,7 +26,7 @@ function gca_runtime_public_status($status){
  }
 
  if(($status['state']??'')==='installing' && !empty($status['updated_at']) && strtotime($status['updated_at'])<time()-900){$status['state']='blocked';$status['reason']='installation_timeout';}
- return array_intersect_key($status,array_flip(['state','reason','started_at','updated_at','sandbox','version','missing_library','node_present','archive_bytes','library_present','missing_libraries','failure_flags','download_http_status','platform','installer_error_code','installer_tool']));
+ return array_intersect_key($status,array_flip(['state','reason','started_at','updated_at','sandbox','version','missing_library','node_present','archive_bytes','library_present','missing_libraries','failure_flags','download_http_status','platform','installer_error_code','installer_tool','engine','sandbox_mode','content_processes']));
 }
 function gca_runtime_status(){
  try{$file=gca_runtime_base().'/status.json';}catch(Throwable $e){return ['state'=>'blocked','reason'=>'private_storage_unavailable'];}

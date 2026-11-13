@@ -18,10 +18,10 @@ function buildPdf(report){
  text('Stav: '+({complete:'zdrojová kontrola dokončena',partial:'částečný výsledek',failed:'kontrolu se nepodařilo provést',running:'nedokončená kontrola'}[report.state]||report.state),10,'muted');
  text('Rozsah: '+(report.pages||[]).length+' načtených stránek, '+s.cookiePolicies.length+' dokumentů. Verze metodiky 1.1.',10,'muted');
  rule();
- const score=s.documentationScore;
- text('Skóre cookie dokumentace: '+(score.percent===null?'nedokončeno':score.percent+' %'),21,'blue',5);
+ const score=s.overviewScore;
+ text('Souhrn dostupných podkladů: '+(score.percent===null?'nedokončeno':score.percent+' %'),21,'blue',5);
  text('Splněné položky: '+score.passed+' z '+score.total+'. Každá položka má stejnou váhu.',10,'ink',4);
- text('Procento hodnotí dostupné cookie dokumenty. Nehodnotí barevnost ani skutečné chování lišty a není procentem právního souladu webu.',9,'muted',6);
+ text('Procento sčítá kontroly veřejných dokumentů a údaje deklarovaných kategorií. Nehodnotí barevnost ani skutečné chování lišty a není procentem právního souladu webu.',9,'muted',6);
  text('Kontrola cookies a cookie lišty',14,'ink');
  text(s.scenarios.length?'Zpráva spojuje kontrolu cookie dokumentace, zdrojů a uvedených skutečně provedených prohlížečových scénářů. Výsledek platí pro testované stránky a dobu pozorování.':'Zpráva vychází z HTTP odpovědí a zdroje stránek. Prohlížečové scénáře nebyly provedeny. Nalezená integrace neprokazuje její spuštění ani porušení pravidel.',10,'muted',8);
  text('Rozsah se týká pouze cookies. Obecné zásady ochrany osobních údajů nejsou předmětem tohoto měřáku.',9,'muted',6);
@@ -40,6 +40,14 @@ function buildPdf(report){
  title('Rozsah měření');
  (report.pages||[]).forEach(p=>{text(p.url,9,'blue');text((p.title||'Bez titulku')+' | HTTP '+p.status+' | integrace: '+p.services.length+' | HTTP cookies: '+p.cookies.length,8,'muted');});
  (report.errors||[]).forEach(e=>text('NEOVĚŘENO: '+e.url+' — '+e.message,9,'error'));
+ title('Deklarované kategorie a položky');
+ text('Deklarace provozovatele/CMP, nikoli měření skutečně uložených cookies. Kategorie hodnotí název, doménu, životnost, popis a zařazení, každý údaj jedním bodem. Nejde o právní ani prohlížečové ověření.',9,'muted');
+ text('Dokumentace: '+(s.documentationScore.percent===null?'nedokončeno':s.documentationScore.percent+' %')+' | Kategorie: '+(s.declarationAssessment.percent===null?'nedokončeno':s.declarationAssessment.percent+' %'),11);
+ for(const category of s.declarationAssessment.categories){
+  title(category.label+' — '+(category.percent===null?'bez hodnocení':category.percent+' %'));
+  text(category.records.length+' položek | '+category.passed+' / '+category.total+' bodů',9,'muted');
+  for(const row of category.records){space(35);text(row.name+' | '+row.domain,11);text('Doba: '+(row.lifetime||'chybí'),9);text(row.description||'Popis chybí.',9,'muted');text(row.missing.length?'Chybějící údaje: '+row.missing.join(', '):'Všech pět údajů uvedeno.',9,row.missing.length?'error':'pass');text('Zdroj deklarace: '+row.source_url,8,'blue');}
+ }
  title('Cookies z HTTP odpovědí');
  text(s.scenarios.length?'Hodnoty cookies se neukládají. Rozsah prohlížečového měření je uveden u jednotlivých scénářů.':'Hodnoty cookies se neukládají. JavaScriptem vytvořené cookies nebyly měřeny.',9,'muted');
  if(!s.cookies.length)text('V měřených HTTP odpovědích nebyla nalezena hlavička Set-Cookie. To neznamená, že web nepoužívá cookies.');
@@ -47,13 +55,13 @@ function buildPdf(report){
  title('Dokumentace cookies');
  if(!s.cookiePolicies.length)text('Dokumentaci se nepodařilo automaticky ověřit. Viz doporučení v nálezech.');
  s.cookiePolicies.forEach(p=>{(p.documents||[{url:p.url}]).forEach(d=>text(d.url,10,'blue'));Object.values(p.checks||{}).forEach(c=>{text(c.label+' — '+root.GCAModel.policyOutcomeLabel(c),10);text(c.evidence,9,'muted');if(c.source_url)text('Zdroj: '+c.source_url,8,'blue');if(c.status!=='pass'&&c.recommendation)text('Doporučená úprava: '+c.recommendation,9,'muted');});(p.services||[]).forEach(c=>{text(c.name+' — '+(c.status==='pass'?'zmínka nalezena':'zmínka nenalezena'),10);text(c.evidence,9,'muted');});});
- title('Rozpis procentuálního hodnocení dokumentace');
- text('Šest základních kontrol textu a navíc popis každé nalezené služby a cookie. Každá položka: 1 bod při splnění, 0 při chybě. Procento = splněné / všechny položky × 100, zaokrouhleno. Hodnota 100 % patří pouze úplnému splnění všech položek. Nedostupné části brání dokončení hodnocení.',9,'muted');
+ title('Rozpis souhrnného hodnocení podkladů');
+ text('Šest základních kontrol textu a navíc popis každé nalezené služby a cookie. Navíc pět údajů každé deklarované položky: název, doména, doba trvání, popis a zařazení. Každý údaj: 1 bod při splnění, 0 při chybě. Procento = splněné / všechny položky × 100, zaokrouhleno. Hodnota 100 % patří pouze úplnému splnění všech položek. Nedostupné části brání dokončení hodnocení.',9,'muted');
  score.criteria.forEach(c=>text((c.status==='pass'?'1 / 1':c.status==='unknown'?'Nedostupné':'0 / 1')+' | '+c.label+' | '+root.GCAModel.policyOutcomeLabel(c),9,c.status));
  title('Podrobné nálezy a doporučené kroky');
  s.findings.forEach((f,i)=>{space(24);text((i+1)+'. '+f.title,12,f.status);text(labels[f.status],8,f.status);text('Zjištění: '+f.evidence,9);text('Doporučení: '+f.fix,9,'muted');if(f.url)text('Stránka: '+f.url,8,'blue');rule();});
  title('Prohlížečové scénáře');
- if(!s.scenarios.length)text('V tomto měření neprovedeno. Chování souhlasu a JavaScriptových cookies nebylo ověřeno.',10,'unknown');
+ if(!s.scenarios.length)text(report.browser?.reason||'V tomto měření neprovedeno. Chování souhlasu a JavaScriptových cookies nebylo ověřeno.',10,'unknown');
  s.scenarios.forEach(x=>{text(x.title+' — '+(labels[x.status]||x.status),12,x.status);text(x.evidence||x.reason||'',9);});
  title('Metodika a omezení');
  text('Maximálně pět veřejných HTML stránek včetně dokumentace. Kontrola běží bez přihlášení a bez odesílání formulářů. Detekce známých služeb je založena na zdrojových stopách; samotné nalezení služby není důkazem jejího spuštění. Kontrola dokumentace automaticky porovnává dostupné cookie dokumenty a jejich tabulky. Nalezené informace uvádí s důkazem, nerozpoznané údaje označuje jako nenalezené v daném rozsahu. Chování lišty je samostatná kontrola. Tento výsledek není posouzením úplného souladu s GDPR ani zárukou bezchybnosti.',9,'muted');

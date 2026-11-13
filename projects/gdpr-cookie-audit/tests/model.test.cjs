@@ -73,3 +73,17 @@ test('rounded percentages never claim full completion when one criterion failed'
  const score=model.summarize(r).documentationScore;
  assert.equal(score.passed,205);assert.equal(score.total,206);assert.equal(score.percent,99);
 });
+test('declared categories have explicit metadata percentages and a weighted overview',()=>{
+ const records=[{name:'_ga',domain:'.example.com',category:'analytics',lifetime:'1 rok',description:'Měření návštěvnosti.',basis:'declaration'},{name:'unknown',domain:'.example.com',category:'other',lifetime:'6 měsíců',description:'Description is currently not available.',basis:'declaration'}];
+ const s=model.summarize({state:'complete',pages:[],policies:[],declared_cookies:records});
+ assert.equal(s.declarationAssessment.percent,80);assert.equal(s.declarationAssessment.passed,8);assert.equal(s.declarationAssessment.total,10);
+ assert.equal(s.declarationAssessment.categories.find(c=>c.id==='analytics').percent,100);
+ assert.equal(s.declarationAssessment.categories.find(c=>c.id==='other').percent,60);
+ assert.equal(s.declarationAssessment.categories.find(c=>c.id==='necessary').percent,null);
+ assert.equal(s.cookies.length,0);assert.equal(s.declaredCookies.length,2);
+});
+test('failed declaration source and dynamic document input suppress completed percentages',()=>{
+ const r=scoredReport();r.policies[0].documents=[{url:'https://example.com/cookies/',available:true,dynamic_content_available:false}];r.declaration_errors=[{message:'timeout'}];
+ assert.equal(model.summarize(r).documentationScore.percent,null);
+ assert.equal(model.summarize(r).declarationAssessment.percent,null);
+});

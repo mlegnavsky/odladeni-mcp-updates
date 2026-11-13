@@ -147,3 +147,50 @@ Evidence: document-score-regression.json. UI screenshot captured during1.5.1; UI
 
 The source measurement engine and text rules retain the prior documented bounds. No Chromium
 sandbox bypass or infrastructure changes. Browser consent/contrast measurement remains unavailable.
+
+
+## Dynamic CookieYes declarations and categories — 2026-11-13
+
+Deployed 1.6.3 only to gdpr-cookies.cz. ZIP SHA256:
+e8cb90980d2f5a9e23311f5c5d52a36f369dfcfe6affc36acf9b3499c1cc33de.
+Update backup: 23c59c4b834847fa3c38ac2fe85cb525.
+
+Loads bounded public CookieYes script/banner/audit-table metadata without executing remote JS.
+Strict provider/account resource allowlist, existing DNS-pinned transport, no redirects, bounded
+accounts/resources/records/bytes/time. First-party account discovery only. Original provenance
+preserved; cookie values never retained. Only matching mounted dynamic policy tables join evidence.
+Unsupported/incomplete script shapes fail closed instead of silently omitting inventory.
+
+Shared UI/PDF category scores assess five declared metadata fields per item: name, domain,
+lifetime, meaningful purpose and known category. Category percentages sum exact passed/total
+fields. Empty categories remain unscored. Overall public-evidence score sums documentation
+checks and metadata fields; it is explicitly not consent behavior or legal compliance.
+
+Real public source regression for stranapro.cz: 21 declared entries, necessary 5, functional 6,
+analytics 2, advertisement 6, other 2. No performance entries. Four populated known categories
+have complete metadata; other category is 60% (two missing purposes and unknown classification).
+Declarations 101/105 = 96%; cookie documentation 6/8 = 75%; combined 107/113 = 95%.
+These correct the prior source-only 38% result: CookieYes table was previously missing from
+extracted text. The website itself was not changed. Google/YouTube/inventory/lifetimes now found.
+Remaining document findings: no recognized withdrawal instructions and implied-consent wording.
+This is a cached-public-source regression, not a final live browser scenario test.
+
+Live public form and PDF/JSON export verified using gdpr-cookies.cz as the test target after
+stranapro.cz reached the existing 5/hour domain limit. Limit was not bypassed. Live own-site report
+contained 7 declared entries, category breakdown 3 necessary / 2 functional / 2 analytics. PDF
+contains all seven names; source URLs, declaration basis and no cookie values verified. Eight
+pages, category page visually inspected: no clipping/overlap. Overall percent correctly withheld
+because policy document was not discovered (35/41 known partial points). UI expanded category
+and both download buttons verified. 1.6.2 UI verified; 1.6.3 changes runtime probe only.
+
+Final verification: 110 PHP assertions and 26 Node tests pass. PHP/JS package lint passed before
+release. Review findings fixed: parser completeness, sandbox filter baseline, browser cleanup.
+
+Browser measurement remains UNFINISHED. Private official Node/Playwright Firefox runtime can
+render a trusted offline page, but content-process isolation could not be verified. Latest 1.6.3
+probe: blocked / sandbox_unavailable / SANDBOX_CONTENT_NOT_FOUND, missing_libraries empty.
+Do not infer the host universally forbids Firefox: this probe could not find a verifiable content
+process. No --no-sandbox or other sandbox disabling. Runtime resources remain outside document
+root, no system package installation. Full user-URL worker/scenario/contrast integration is still
+needed after a verified isolated runtime is available; source/declaration analysis does not do it.
+Further work requires actual server administration access or an authorized isolated worker host.
