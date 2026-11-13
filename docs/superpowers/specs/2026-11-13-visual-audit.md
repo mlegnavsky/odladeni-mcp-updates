@@ -1,0 +1,2 @@
+# Visual cookie audit — approved spoken brief
+Public report and PDF lead with a prominent technical score, critical alert, four scored areas, cookie category bars, consent phase comparison and small enlargable evidence images. Internal evidence and remediation are admin-only, including JSON/API. Preserve archive and hash URLs. Unknown classifications never pass; incomplete tests reduce coverage and block an overall completed score. Compare two same-domain saved reports explicitly. Existing WordPress/PHP/JS/jsPDF stack; reuse isolated Firefox.

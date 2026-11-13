@@ -27,7 +27,7 @@ check(gca_session(new Req(['id'=>$job['id']],['x-audit-token'=>'wrong']))===null
 $job['state']='failed';$job['expires_at']=time()-100;$job['errors']=[['url'=>$job['url'],'message'=>'timeout','kind'=>'page']];
 check(gca_save_job($job),'failed measurement retained too');$store=[];
 $r=gca_report(new Req(['id'=>$job['id']],['x-audit-token'=>'private']));
-check(is_array($r)&&$r['state']==='failed'&&count($r['errors'])===1,'saved failed result accessible after former one-hour expiry');
+check(is_array($r)&&$r['state']==='failed'&&!isset($r['errors'])&&count(gca_load_archived_job($job['id'])['errors'])===1,'saved failed result accessible after former one-hour expiry');
 check(!isset($r['token_hash'])&&!isset($r['queue'])&&!isset($r['ip_hash']),'private archive fields absent from downloadable report');
 $job['id']=str_repeat('c',32);$job['state']='complete';check(gca_save_job($job)&&count($wpdb->rows)===2,'different measurements preserve distinct snapshots');
 $wpdb->fail=true;$job['cursor']=1;check(gca_save_job($job)===false,'durability failure is propagated instead of silently claiming saved');

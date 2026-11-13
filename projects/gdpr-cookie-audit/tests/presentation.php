@@ -1,0 +1,23 @@
+<?php
+require __DIR__.'/wp.php';
+check(function_exists('gca_presentation'),'presentation assessment exists');
+$j=['id'=>str_repeat('a',32),'token_hash'=>'secret','url'=>'https://example.com','state'=>'complete','queue'=>[],'pages'=>[],'policies'=>[],'browser'=>['status'=>'complete','results'=>[['id'=>'before','status'=>'error','title'=>'Cookies před souhlasem','evidence'=>'SECRET_EVIDENCE','fix'=>'SECRET_FIX']],'observations'=>[['phase'=>'before','cookies'=>[['name'=>'_ga','domain'=>'example.com','category'=>'analytics','lifetime'=>'2027-01-01']],'storage'=>[['name'=>'mystery','type'=>'localStorage','origin'=>'https://example.com']],'requests'=>[['url'=>'SECRET_REQUEST']]]]],'declared_cookies'=>[['name'=>'_ga','domain'=>'example.com','category'=>'necessary','lifetime'=>'1 rok','description'=>'Google Analytics']]];
+$p=gca_presentation($j);
+check($p['critical']===1,'critical behavior remains prominent');
+check($p['areas'][2]['percent']<100,'analytics incorrectly declared necessary loses classification points');
+check($p['inventory']['unknown']===1,'unknown storage remains unknown');
+$pub=gca_public_report($j);$json=json_encode($pub);
+check(!str_contains($json,'SECRET_')&&!isset($pub['declared_cookies'])&&!isset($pub['browser']['observations']),'public response has no raw evidence or inventories');
+$j['browser']['results'][]=['id'=>'reject','status'=>'unknown'];
+check(gca_presentation($j)['percent']===null,'unfinished test prevents overall success');
+check(gca_record_matches(['name'=>'_ga_*','domain'=>'example.com'],['name'=>'_ga_123','domain'=>'www.example.com']),'declaration domain covers measured subdomain');
+check(!gca_record_matches(['name'=>'_ga_*','domain'=>'example.com'],['name'=>'_ga_123','domain'=>'evilexample.com']),'domain suffix has label boundary');
+check(function_exists('gca_lifetime_evidence'),'observed lifetime comparison exists');
+check(gca_lifetime_evidence(['lifetime'=>'2027-01-01T00:00:00Z'],['lifetime'=>'1 den'],'2026-01-01T00:00:00Z')==='conflict','gross expiry mismatch is detected');
+check(gca_lifetime_evidence(['lifetime'=>'2027-01-01T00:00:00Z'],['lifetime'=>'1 rok'],'2026-01-01T00:00:00Z')==='match','matching expiry is confirmed');
+check(gca_lifetime_evidence(['type'=>'localStorage'],['lifetime'=>'Nikdy nevyprší'],'2026-01-01')==='unknown','storage name alone does not prove retention');
+$internal=gca_public_report($j,true);check($internal['is_internal']&&str_contains(json_encode($internal),'SECRET_EVIDENCE'),'internal response retains evidence for protected admin route');
+$mismatch=array_values(array_filter($p['classification_details'],fn($r)=>($r['declared']??'')==='necessary'))[0];check(!str_contains($mismatch['basis'],'shoda s deklarací'),'mismatch evidence does not claim category agreement');
+check(gca_lifetime_evidence(['lifetime'=>'2026-01-02T00:00:00Z'],['lifetime'=>'1 minuta'],'2026-01-01T00:00:00Z')==='conflict','minute retention never receives two-day tolerance');
+check(gca_lifetime_evidence(['lifetime'=>'2026-02-05T00:00:00Z'],['lifetime'=>'1 měsíc 4 dny'],'2026-01-01T00:00:00Z')==='match','compound durations include all units');
+$partial=$j;$partial['browser']['results']=[['id'=>'before','status'=>'pass'],['id'=>'mobile','status'=>'pass'],['id'=>'contrast','status'=>'pass']];$pp=gca_presentation($partial);check($pp['percent']===null&&$pp['unfinished']>0,'missing expected scenarios block false complete score');
