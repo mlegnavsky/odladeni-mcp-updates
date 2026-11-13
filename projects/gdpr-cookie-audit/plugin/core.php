@@ -61,6 +61,15 @@ function gca_provider_catalog() {
       'seznam'=>['Seznam / Sklik','~c\.seznam\.cz|sklik\.cz~i','reklama','~Seznam|Sklik~iu'],
     ];
 }
+function gca_cookie_policy_priority($label,$url){
+    $path=parse_url($url,PHP_URL_PATH)??'';$text=$label.' '.$path;
+    if(!preg_match('~cookies?~iu',$text))return 0;
+    $explicit='~zásad|zasad|pravidl|policy|policies|prohlášení|prohlaseni|declaration|politika~iu';
+    if(preg_match($explicit,$label))return 100;
+    if(preg_match($explicit,$path))return 80;
+    if(preg_match('~kontrol|scanner|skener|audit|test|nastaven|settings|preferences|banner|lišt|lista|manage~iu',$text))return 0;
+    return preg_match('~^/?cookies?/?$~i',$path)||preg_match('~^cookies?$~iu',trim($label))?50:0;
+}
 function gca_analyze_page($url,$html,$setCookies=[],$status=200) {
     preg_match('~<title\b[^>]*>(.*?)</title>~is',$html,$m);
     $result=['url'=>$url,'status'=>$status,'title'=>gca_text($m[1]??''),'bytes'=>strlen($html),'services'=>[],'cookies'=>[],'policies'=>[],'links'=>[],'dynamic_verified'=>false];
@@ -85,7 +94,8 @@ function gca_analyze_page($url,$html,$setCookies=[],$status=200) {
     preg_match_all('~<a\b[^>]*href\s*=\s*["\x27]([^"\x27]*)["\x27][^>]*>(.*?)</a>~is',$html,$links,PREG_SET_ORDER);
     foreach ($links as $a) {
         $target=gca_resolve_url($url,$a[1]); if (!$target) continue; $label=gca_text($a[2]);
-        if (preg_match('~cookie|ochran[ay]\s+osobn|privacy|zásad|zasad|soubor[ůu]\s+cookie~iu',$label.' '.parse_url($target,PHP_URL_PATH))) $result['policies'][$target]=['url'=>$target,'label'=>$label];
+        $priority=gca_cookie_policy_priority($label,$target);
+        if($priority>0)$result['policies'][$target]=['url'=>$target,'label'=>$label,'priority'=>$priority];
         if (parse_url($target,PHP_URL_HOST)===parse_url($url,PHP_URL_HOST) && !preg_match('~/(wp-admin|wp-json|wp-login|logout|cart|checkout|kosik|odhlas|cdn-cgi(?:/|$))|\.(jpg|png|svg|pdf|zip|xml|js|css)(/|$)~i',$target)) $result['links'][$target]=$target;
     }
     $result['links']=array_values($result['links']);$result['policies']=array_values($result['policies']);
@@ -96,14 +106,21 @@ function gca_analyze_page($url,$html,$setCookies=[],$status=200) {
 function gca_analyze_policy($url,$html,$serviceIds=[],$cookies=[]) {
     $text=gca_text($html);
     $patterns=[
-      'contact'=>['Provozovatel a kontakt','~.{0,65}(?:[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|IČO\s*:?\s*\d{6,8}|správc[ei]|controller).{0,90}~iu'],
-      'purposes'=>['Účely používání','~.{0,65}(?:analytick|marketing|nezbytn|účel|purposes?|necessary|advertising).{0,90}~iu'],
-      'retention'=>['Doby uchování','~.{0,65}(?:\d+\s*(?:dní|dnů|dny|měsíc|rok|let|days?|months?|years?)|po dobu relace|session|doba (?:uchování|platnosti)|dobu (?:uchování|platnosti)).{0,90}~iu'],
-      'withdrawal'=>['Změna a odvolání souhlasu','~.{0,65}(?:odvola[tln]|odvolání|změn\w* souhlas|withdraw|revoke).{0,90}~iu'],
+      'purposes'=>['Účely používání cookies','~.{0,65}(?:analytick|marketing|nezbytn|účel|purposes?|necessary|advertising).{0,90}~iu'],
+      'retention'=>['Platnost a životnost cookies','~.{0,65}(?:\d+\s*(?:dní|dnů|dny|měsíc|rok|let|days?|months?|years?)|po dobu relace|po dobu návštěvy|při zavření prohlížeče|session cookies?).{0,90}~iu'],
+      'withdrawal'=>['Změna a odvolání souhlasu s cookies','~.{0,65}(?:odvola[tln]|odvolání|změn\w* souhlas|withdraw|revoke).{0,90}~iu'],
       'choice'=>['Odmítnutí volitelných cookies','~.{0,65}(?:odmítn|nesouhlas|reject|decline).{0,90}~iu'],
     ];
     $out=['url'=>$url,'checks'=>[],'services'=>[],'cookies'=>[],'text_length'=>strlen($text)];
     foreach ($patterns as $id=>[$label,$pattern]) { $found=preg_match($pattern,$text,$m);$out['checks'][$id]=['label'=>$label,'status'=>$found?'pass':'warning','evidence'=>$found?$m[0]:'V načteném textu nebyla nalezena odpovídající informace. Vyžaduje ruční ověření.']; }
+    $cookieNames=array_values(array_unique(array_map(function($c){return $c['name'];},$cookies)));
+    $inventoryEvidence=null;
+    foreach($cookieNames as $name)if(stripos($text,$name)!==false){$inventoryEvidence=$name;break;}
+    if(!$inventoryEvidence && preg_match('~(?:_ga(?:_[A-Z0-9]+)?|_gid|_fbp|cookieyes-consent|wordpress_logged_in_[*a-z0-9]*|PHPSESSID)~i',$text,$m))$inventoryEvidence=$m[0];
+    $out['checks']['inventory']=['label'=>'Přehled konkrétních cookies','status'=>$inventoryEvidence?'pass':'warning','evidence'=>$inventoryEvidence?'V dokumentu nalezen konkrétní název cookie: '.$inventoryEvidence:'V načteném dokumentu nebyly rozpoznány konkrétní názvy cookies. Přehled může být v nastavení lišty; ověřte jej tam.'];
+    $implied=preg_match('~.{0,60}(?:používáním|prohlížením|návštěvou|pokračováním).{0,100}(?:souhlasíte|souhlas).{0,60}~iu',$text,$m);
+    if($implied && preg_match('~neudělujete|nedáváte|nevyjadřujete|nesouhlasíte|neznamená.{0,25}souhlas|nepovažuje~iu',$m[0]))$implied=false;
+    $out['checks']['implied_consent']=['label'=>'Souhlas aktivní volbou','status'=>$implied?'warning':'unknown','evidence'=>$implied?$m[0]:'Ve zdroji nebyla rozpoznána formulace souhlasu pouhou návštěvou. Skutečná volba v liště vyžaduje prohlížečový test.'];
     $catalog=gca_provider_catalog();
     foreach (array_unique($serviceIds) as $id) { if (!isset($catalog[$id])) continue;$p=$catalog[$id];$found=preg_match($p[3],$text,$m);$out['services'][]=['id'=>$id,'name'=>$p[0],'status'=>$found?'pass':'warning','evidence'=>$found?'V dokumentu nalezena zmínka: '.$m[0]:'Služba nalezena ve zdroji webu, v tomto dokumentu nenalezena. Ověřte skutečné použití a dokumentaci.']; }
     foreach ($cookies as $c) $out['cookies'][]=['name'=>$c['name'],'status'=>stripos($text,$c['name'])!==false?'pass':'warning'];

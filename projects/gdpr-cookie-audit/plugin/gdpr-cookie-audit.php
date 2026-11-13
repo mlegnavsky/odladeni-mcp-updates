@@ -2,7 +2,7 @@
 /**
  * Plugin Name: GDPR Cookies – bezplatný audit webu
  * Description: Přehledná kontrola cookies, zdrojových integrací a zásad cookies s PDF zprávou.
- * Version: 1.1.4
+ * Version: 1.3.6
  * Requires PHP: 8.0
  * Author: Martin Legnavsky
  * Update URI: https://plaginy.odladeni.cz/gdpr-cookie-audit
@@ -10,7 +10,8 @@
  */
 if (!defined('ABSPATH')) exit;
 require_once __DIR__.'/core.php';
-define('GCA_VERSION','1.1.4');
+require_once __DIR__.'/runtime.php';
+define('GCA_VERSION','1.3.6');
 
 function gca_asset_url($file) { return plugins_url('assets/'.$file,__FILE__); }
 function gca_enqueue() {
@@ -24,6 +25,8 @@ function gca_enqueue() {
 add_action('wp_enqueue_scripts',function(){if(is_page('kontrola-cookies'))gca_enqueue();});
 function gca_dashboard(){ gca_enqueue(); ob_start();require __DIR__.'/dashboard.php';return ob_get_clean(); }
 add_shortcode('gdpr_cookie_audit','gca_dashboard');
+add_action('gca_runtime_install','gca_runtime_bootstrap');
+register_activation_hook(__FILE__,function(){if(!wp_next_scheduled('gca_runtime_install'))wp_schedule_single_event(time()-1,'gca_runtime_install');});
 register_activation_hook(__FILE__,function() {
     if (!get_page_by_path('kontrola-cookies')) {
         $id=wp_insert_post(['post_type'=>'page','post_title'=>'Bezplatná kontrola cookies','post_name'=>'kontrola-cookies','post_status'=>'draft','post_content'=>'[gdpr_cookie_audit]']);
@@ -100,7 +103,7 @@ function gca_step($request) {
                 if($job['cursor']===0) {
                     $job['url']=$f['url'];$seen=[$f['url']=>true,$item['url']=>true];
                     if(!empty($job['manual_policy']) && !isset($seen[$job['manual_policy']])){$job['queue'][]=['url'=>$job['manual_policy'],'kind'=>'policy'];$seen[$job['manual_policy']]=true;}
-                    usort($page['policies'],function($a,$b){return (int)(stripos(parse_url($b['url'],PHP_URL_PATH)??'','cookie')!==false)-(int)(stripos(parse_url($a['url'],PHP_URL_PATH)??'','cookie')!==false);});
+                    usort($page['policies'],function($a,$b){return ($b['priority']??0)<=>($a['priority']??0);});
                     foreach(array_slice($page['policies'],0,2) as $link) if(count($job['queue'])<3 && !isset($seen[$link['url']])){$job['queue'][]=['url'=>$link['url'],'kind'=>'policy'];$seen[$link['url']]=true;}
                     foreach($page['links'] as $link){if(count($job['queue'])>=5)break;if(!isset($seen[$link])){$job['queue'][]=['url'=>$link,'kind'=>'page'];$seen[$link]=true;}}
                 }
@@ -117,7 +120,7 @@ function gca_step($request) {
     } finally { gca_unlock('job_'.$id); }
 }
 add_action('rest_api_init',function() {
-    register_rest_route('gdpr-audit/v1','/status',['methods'=>'GET','permission_callback'=>'__return_true','callback'=>function(){return ['version'=>GCA_VERSION,'source_audit'=>function_exists('curl_init'),'browser_audit'=>false];}]);
+    register_rest_route('gdpr-audit/v1','/status',['methods'=>'GET','permission_callback'=>'__return_true','callback'=>function(){return ['version'=>GCA_VERSION,'source_audit'=>function_exists('curl_init'),'browser_audit'=>false,'runtime'=>gca_runtime_status()];}]);
     register_rest_route('gdpr-audit/v1','/start',['methods'=>'POST','permission_callback'=>'gca_same_origin','callback'=>'gca_start']);
     register_rest_route('gdpr-audit/v1','/step',['methods'=>'POST','permission_callback'=>'gca_same_origin','callback'=>'gca_step']);
 });

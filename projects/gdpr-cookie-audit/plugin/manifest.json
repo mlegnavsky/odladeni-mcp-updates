@@ -1,7 +1,7 @@
 {
   "slug": "gdpr-cookie-audit",
   "name": "GDPR Cookies – bezplatný audit webu",
-  "version": "1.1.4",
+  "version": "1.3.6",
   "author": "Martin Legnavsky",
   "update_uri": "https://plaginy.odladeni.cz/gdpr-cookie-audit",
   "description": "Bezplatná kontrola veřejných stránek, zdrojových integrací a zásad cookies.",
@@ -11,6 +11,15 @@
     "Přehled a PDF zpráva"
   ],
   "changelog": [
+    "1.3.6: Ověření fyzicky neveřejného úložiště a doplnění zjištěných knihoven Chromium. Hosting nepovoluje sandbox, scénáře zůstávají neprovedené.",
+    "1.3.5: Oprava kompatibility přípravy knihoven s balíčkem Playwright 1.65.0.",
+    "1.3.4: Doplnění knihoven prohlížeče do soukromého prostředí bez změn systémových balíčků hostingu.",
+    "1.3.3: Ověření systémových závislostí pro bezpečné spuštění prohlížeče.",
+    "1.3.2: Bezpečná diagnostika chybějících systémových součástí prohlížečového měření.",
+    "1.3.1: Přesnější rozpoznání cookie dokumentu, samostatné výsledky měření a obnovená soukromá příprava prohlížeče.",
+    "1.3.0: Měřák pouze pro cookies a cookie stránku; obecná GDPR kontrola odstraněna, skutečné scénáře odděleny od neprovedených.",
+    "1.2.1: Hlídání dokončení přípravy prohlížeče a ověření soukromého úložiště.",
+    "1.2.0: Soukromá příprava ověřeného prohlížečového prostředí; bez veřejného instalačního rozhraní.",
     "1.1.4: Technické odkazy Cloudflare /cdn-cgi/ nejsou zahrnovány mezi obsahové stránky auditu.",
     "1.1.3: Doplněna blokace dokumentačního rozsahu IPv6 3fff::/20; testy Cloudflare a neveřejných adres.",
     "1.1.2: Oprava rozpoznání veřejných IPv6 adres Cloudflare a dalších CDN při zachování blokace neveřejných adres.",

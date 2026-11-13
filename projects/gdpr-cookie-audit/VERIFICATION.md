@@ -47,3 +47,38 @@ Tests cover all seven published Cloudflare IPv6 prefixes, nonpublic/documentatio
 and excluding the Cloudflare email protection endpoint from content-page discovery.
 
 Final live regression: stranapro.cz completed; five public pages including /pravidla-cookies/ returned HTTP 200, zero fetch errors. See stranapro-regression.json.
+
+
+## Cookie-only scope and browser viability — 2026-11-13
+
+Deployed 1.3.6 to gdpr-cookies.cz only. Release SHA256:
+e90420e6bdb2f544d8c914fa7dc1890eefb2a834739b41843fda44abdc6f9582.
+Release ZIP manifest predates the final documentation-only changelog notes.
+
+Cookie documents are discovered separately from general privacy documents. Generic controller/contact
+checking is removed, including filtering legacy report fields in the dashboard/PDF. Cookie checks:
+purposes, meaningful lifetime evidence, withdrawal, rejection, specific inventory, implied-consent wording.
+Known cookie scanner/settings links no longer displace the actual cookie document. Empty browser
+results now produce one unverified finding and a compact notice, not seven placeholder cards.
+Observed-result rendering is prepared but no browser worker is connected.
+
+Validation: 56 PHP core assertions, 7 WordPress adapter assertions, 9 runtime assertions and 14 Node
+tests passed. Public UI scan of https://www.stranapro.cz/ completed at 2026-11-13T12:20:10Z:
+five HTTP200 HTML pages, /pravidla-cookies/ found automatically, 2 source integrations, no load errors,
+no generic controller/contact finding. Downloaded real Czech PDF: six pages; cookie policy URL,
+lifetime, withdrawal, cookie-only scope and unmeasured-browser explanation present.
+
+Runtime attempt: official SHA256-pinned Node 22.23.5 and Playwright-core1.65.0/Chromium installed
+outside the document root, system library packages downloaded from host APT repositories and extracted
+privately (no system installation/root). First launch identified missing direct libraries, then three
+transitive libraries; these were added. Final live status at 2026-11-13T12:22:06.940Z:
+state=blocked, reason=sandbox_unavailable, missing_libraries=[], browser_audit=false.
+Hosting does not permit the required Chromium sandbox. No --no-sandbox fallback is used. A hosting
+administrator must enable supported sandbox isolation or provide an isolated browser worker host.
+The current tool does NOT measure consent actions, JavaScript cookies/storage or real screenshots.
+The proxy and scenario-logic modules are tested preparation, not a working browser measurement service.
+No scanner result is labeled as browser-verified. Source/policy auditing remains available.
+
+Independent review found no critical issue. Canonicalized real paths now protect runtime storage
+against public-root symlinks; additional native libraries were identified through actual ldd output.
+Remaining discovery limitation: nonstandard cookie-document labels may require manual URL input.

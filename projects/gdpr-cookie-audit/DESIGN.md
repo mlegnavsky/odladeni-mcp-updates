@@ -23,3 +23,18 @@ Rate-limit jobs per IP/domain and global concurrent work; expire jobs after one 
 
 Deployment: versioned ZIP via Odladeni, install only gdpr-cookies.cz, wire existing tools
 buttons to new shortcode page. Verify home, tools, scan, validation and downloaded PDF.
+
+
+## Approved refinement 2026-11-13
+Only cookies, cookie banner, consent behavior and the cookie-information page belong to this
+audit. General privacy-policy compliance and generic controller/contact checks belong to a
+future separate tool. Privacy-only links must not become cookie policy documents. Cookie
+purpose, lifetime, provider, actual list and consent/change/withdrawal remain in scope.
+
+Finish actual browser measurement when hosting permits: install verified official Node in
+private vhost storage, official Playwright Chromium with browser sandbox enabled, and a local
+DNS-pinning egress proxy rejecting private addresses on every request and redirect. No paid
+services, exposed debugging port, authentication changes, or disabled sandbox. Bootstrap is
+triggered only by authorized plugin activation; public scan requests cannot install software.
+If dependencies or sandbox are unavailable, preserve accurate partial reporting and expose
+the concrete blocker rather than fabricated results.
