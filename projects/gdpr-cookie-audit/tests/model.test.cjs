@@ -87,3 +87,10 @@ test('failed declaration source and dynamic document input suppress completed pe
  assert.equal(model.summarize(r).documentationScore.percent,null);
  assert.equal(model.summarize(r).declarationAssessment.percent,null);
 });
+
+test('missing cookie document in a completed bounded crawl scores zero with a concrete issue',()=>{
+ const r={state:'complete',url:'https://spd.cz/',pages:[{url:'https://spd.cz/',services:[],cookies:[]}],policies:[],errors:[],policy_discovery:{status:'missing',issues:[{url:'https://spd.cz/',label:'Pravidla Cookies',href:'#'}]}};
+ const s=model.summarize(r);assert.equal(s.documentationScore.percent,0);assert.equal(s.overviewScore.percent,0);assert.equal(s.findings.find(f=>f.id==='policy-missing').status,'error');assert.ok(s.findings.some(f=>f.id.startsWith('policy-link-')));
+ r.policy_discovery.status='unavailable';assert.equal(model.summarize(r).documentationScore.percent,null);
+ r.state='running';r.policy_discovery.status='pending';assert.equal(model.summarize(r).documentationScore.percent,null);
+});

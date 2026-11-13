@@ -15,6 +15,7 @@ function buildPdf(report){
  text('Přehled cookies a dokumentace',25,'ink',8);
  text(report.url,13,'blue',4);
  text('Měření: '+new Date(report.started_at).toLocaleString('cs-CZ'),10,'muted');
+ text('ID: '+(report.id||'neuvedeno')+(report.storage==='permanent'?' | Trvale uloženo v historii':''),9,'muted');
  text('Stav: '+({complete:'zdrojová kontrola dokončena',partial:'částečný výsledek',failed:'kontrolu se nepodařilo provést',running:'nedokončená kontrola'}[report.state]||report.state),10,'muted');
  text('Rozsah: '+(report.pages||[]).length+' načtených stránek, '+s.cookiePolicies.length+' dokumentů. Verze metodiky 1.1.',10,'muted');
  rule();

@@ -194,3 +194,45 @@ process. No --no-sandbox or other sandbox disabling. Runtime resources remain ou
 root, no system package installation. Full user-URL worker/scenario/contrast integration is still
 needed after a verified isolated runtime is available; source/declaration analysis does not do it.
 Further work requires actual server administration access or an authorized isolated worker host.
+
+
+## Persistent history and useful missing-document diagnosis — 2026-11-13
+
+Final release1.7.2, SHA25630ad5c8428879ac81f56d3a359c287402f5b4e6beee5fe9e8bff5910ad90b82b.
+Final update backup5f054e429c00d37dbcf56cb01cd24216. Active on gdpr-cookies.cz only.
+Private wp_gca_measurements snapshots save every start/step, including failed/running jobs.
+Database save failure returns503; transients are cache only. Capability token remains required,
+stored hashed on server; no public archive listing or requester IP history. Visitors keep bounded
+local references and private fragment links; administrator has Tools > Měření cookies, paginated
+25 per page, with capability-protected report viewer/download. Admin UI access requires login;
+its rendering was reviewed in code, not verified through a logged-in live browser this turn.
+
+Old surviving WP transient jobs are imported in bounded20-row cron batches. INSERT IGNORE and
+no migration cache write ensure a concurrent step wins; report promotion uses same insert-only
+path then reads durable snapshot. Deleted/expired-and-removed old data cannot be recovered.
+Public status reports archive_ready and archive_import_complete; schema creation confirmed live.
+
+Root cause of user's spd.cz screenshot: footer Pravidla Cookies href="#" was silently discarded;
+no policy yielded unexplained unknown checks. Now named placeholders produce precise errors,
+and no-document in successfully inspected readable pages gives0/6 documented checks (0%).
+Scope explicitly names inspected pages; does not assert global/legal nonexistence. HTTP200
+challenge pages, empty JS shells, fetch failures and unsupported query/modal links suppress
+percent instead of generating false zero. Actual browser/consent/contrast remains unavailable.
+
+Live1.7.1 public form scan of SPD.CZ normalized to https://spd.cz/, completed5 HTTP200 pages,
+one source Google tag integration, five placeholder policy links, no cookie document, score0/6.
+Saved ID4657912fbca60a1ba285cc649a7cb3f5. Reload restored identical ID/result without starting
+another measurement. JSON and PDF downloaded: matching ID,target,persistent flag, score0%; no
+queue/token_hash/IP fields. PDF first page rendered and visually verified. Second live target
+https://gdpr-cookies.cz/ saved distinct ID3f31117c605e3630b81e9c4cfc819d26 and85% available
+public-evidence score (7 declared entries, missing document). Both history entries visible; clicking
+SPD entry reopened its original ID/score after second scan. Screenshot evidence/history-spd-v1.7.1.jpg.
+This does not represent85% consent compliance; runtime test remains explicitly unperformed.
+
+Review: two false-zero findings reproduced/fixed (challenge/shell, unsupported query link).
+Additional migration review found stale snapshot REPLACE race; test injected newer concurrent
+save and reproduced rollback RED, then passed with insert-only import. Full final suite142 PHP
+assertions (includes7 rerun WP assertions via archive test),29 Node tests. PHP/JS package lint
+and git diff --check pass. UI assets identical between tested1.7.1 and final1.7.2 except version.
+
+Final live status (cache-busted GET) confirms1.7.2, archive_ready:true and archive_import_complete:true at2026-11-13T15:09Z. Bare status URL had an older cached1.7.1 response; final verification used explicit cache bypass.

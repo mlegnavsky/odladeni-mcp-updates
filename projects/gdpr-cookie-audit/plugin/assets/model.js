@@ -8,7 +8,10 @@
    (p.cookies||[]).forEach(c=>{const key=[c.name,c.domain,c.path].join('|');if(!seenC.has(key)){seenC.add(key);cookies.push(c);}});
   });
   errors.forEach((e,i)=>findings.push({id:'fetch-'+i,status:'error',title:'Stránku se nepodařilo ověřit',evidence:e.message,url:e.url,fix:'Ověřte dostupnost stránky, případné blokování automatické kontroly a měření opakujte.'}));
-  if(!policies.length)findings.push({id:'policy-missing',status:'warning',title:'Dokumentace cookies nebyla ověřena',evidence:pages.some(p=>(p.policies||[]).length)?'Odkaz byl nalezen, ale dokument se nepodařilo zpracovat.':'Na vstupní stránce nebyl rozpoznán odkaz na stránku se zásadami cookies. Dokument může existovat na jiném místě.',url:report.url,fix:'Zkontrolujte odkaz v liště a patičce a zajistěte srozumitelný dokument s přehledem skutečně používaných cookies.'});
+  const missingDocument=report.policy_discovery?.status==='missing'&&['complete','partial'].includes(report.state);
+  if(!policies.length)findings.push({id:'policy-missing',status:missingDocument?'error':report.policy_discovery?'unknown':'warning',title:missingDocument?'Dokumentace cookies nebyla v kontrolovaných stránkách nalezena':'Dokumentaci cookies se nepodařilo vyhodnotit',evidence:missingDocument?'V '+pages.length+' úspěšně načtených stránkách nebyl nalezen dostupný cookie dokument. Šest dokumentačních kritérií proto nemá doložené splnění.':'Kontrola dokumentace není dokončená; příčinu najdete v chybách načítání.',url:report.url,fix:'Zajistěte funkční a viditelný odkaz na veřejný dokument s přehledem používaných cookies.'});
+  (report.policy_discovery?.issues||[]).forEach((issue,i)=>{const unsupported=issue.reason==='unsupported';findings.push({id:'policy-link-'+i,status:unsupported?'unknown':'error',title:unsupported?'Odkaz na cookie dokument nelze tímto měřením načíst':'Odkaz na cookie dokument nevede na stránku',evidence:'Odkaz „'+issue.label+'“ má cíl „'+(issue.href||'(prázdný)')+'“. '+(unsupported?'Cíl vyžaduje dynamickou interakci nebo má nepodporovaný formát adresy. Obsah nebyl ověřen.':'V načteném zdroji neodkazuje na samostatný dostupný dokument; případný dynamický obsah nebyl měřen.'),url:issue.url,fix:unsupported?'Zajistěte také přímý veřejný odkaz na cookie dokument.':'Nastavte skutečnou veřejnou adresu dokumentu a ověřte jeho otevření z patičky i lišty.'});});
+  pages.filter(p=>p.content_available===false).forEach((p,i)=>findings.push({id:'page-content-'+i,status:'unknown',title:'Obsah stránky nelze vyhodnotit',evidence:p.content_reason,url:p.url,fix:'Zdroj obsahuje výzvu nebo vyžaduje vykreslení JavaScriptu. Výsledek není důkazem chybějící dokumentace.'}));
   policies.forEach((p,i)=>{
    Object.entries(p.checks||{}).forEach(([id,c])=>findings.push({id:'policy-'+i+'-'+id,status:c.status,title:c.label+' — kontrola textu',evidence:c.evidence,url:c.source_url||p.url,outcome:c.outcome,fix:c.recommendation||(c.status==='pass'?'Informace byla v kontrolovaném textu nalezena.':'Doplňte uvedenou informaci do cookie dokumentace.')}));
    (p.services||[]).filter(s=>s.status!=='pass').forEach(s=>findings.push({id:'service-'+i+'-'+s.id,status:s.status,title:s.name+(s.status==='unknown'?' — dokument nedostupný':' — nenalezena zmínka v dokumentaci'),evidence:s.evidence,url:p.url,fix:'Ověřte, zda službu skutečně používáte. Pokud ano, zkontrolujte její účely a odpovídající informace v dokumentaci.'}));
@@ -31,7 +34,8 @@
   const rank={conflict:4,found:3,not_detected:3,missing:2,unavailable:0};
   for(const id of ids){
    const candidates=policies.map(p=>p.checks?.[id]).filter(Boolean).sort((a,b)=>(rank[b.outcome]??(b.status==='pass'?3:1))-(rank[a.outcome]??(a.status==='pass'?3:1)));
-   const c=candidates[0]||{status:'unknown',outcome:'unavailable',evidence:'Obsah dokumentace nebyl dostupný pro tuto kontrolu.'};
+   const missing=report.policy_discovery?.status==='missing'&&['complete','partial'].includes(report.state);
+   const c=candidates[0]||(missing?{status:'error',outcome:'missing',evidence:'Cookie dokument nebyl v kontrolovaných stránkách nalezen; splnění tohoto kritéria není doloženo.'}:{status:'unknown',outcome:'unavailable',evidence:'Obsah dokumentace nebyl dostupný pro tuto kontrolu.'});
    criteria.push({...c,id,label:c.label||labels[id]});
   }
   for(const type of ['services','cookies']){
@@ -44,7 +48,7 @@
   for(const e of (report.errors||[]).filter(e=>e.kind==='policy'))unavailableDocuments.set(e.url,e);
   for(const [url,error] of unavailableDocuments)criteria.push({id:'document-load-'+url,label:'Dostupnost celého dokumentu: '+url,status:'unknown',outcome:'unavailable',evidence:error.message});
   const passed=criteria.filter(c=>c.status==='pass').length,unavailable=criteria.filter(c=>!['pass','warning','error'].includes(c.status)).length;
-  const complete=['complete','partial'].includes(report.state)&&policies.length>0&&unavailable===0;
+  const complete=['complete','partial'].includes(report.state)&&(policies.length>0||report.policy_discovery?.status==='missing')&&unavailable===0;
   return {scope:'documentation',percent:complete?(passed===criteria.length?100:Math.min(99,Math.round(passed/criteria.length*100))):null,passed,total:criteria.length,unavailable,criteria};
  }
  function scoreDeclarations(report,records){

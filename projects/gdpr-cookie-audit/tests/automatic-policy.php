@@ -48,3 +48,20 @@ check(count(array_filter($p['services'],fn($s)=>$s['status']==='pass'))===0,'gen
 $p=gca_analyze_policy('https://example.com/cookies/','<p>Cookies mají různé účely. Používáním webu souhlasíte s cookies.</p>');
 check($p['checks']['retention']['status']==='error'&&$p['checks']['implied_consent']['status']==='error','missing documentation and conflicting wording are concrete document defects');
 echo "ALL AUTOMATIC POLICY TESTS PASSED\n";
+
+$page=gca_analyze_page('https://spd.cz/','<main>Veřejně dostupná prezentace a informace o službách provozovatele webu.</main><footer><a href="#"><span>Pravidla Cookies</span></a></footer>');
+check(count($page['policy_link_issues']??[])===1,'named placeholder cookie link is reported, not silently discarded');
+check(!$page['policies'],'placeholder cookie link does not enqueue current page as document');
+$d=gca_policy_discovery(['state'=>'complete','pages'=>[$page],'policies'=>[],'errors'=>[]]);
+check($d['status']==='missing'&&count($d['issues'])===1,'successful bounded scan classifies undiscovered document as missing');
+check(gca_policy_discovery(['state'=>'failed','pages'=>[],'policies'=>[],'errors'=>[['kind'=>'page']]])['status']==='unavailable','fetch failure never becomes absent documentation');
+check(gca_policy_discovery(['state'=>'partial','pages'=>[$page],'policies'=>[],'errors'=>[['kind'=>'policy']]])['status']==='unavailable','failed discovered policy is not classified missing');
+$page=gca_analyze_page('https://example.com/','<a href="#cookie-settings" onclick="openSettings()">Nastavení cookies</a>');
+check(!$page['policy_link_issues'],'cookie settings fragment is not falsely a missing policy document');
+$page=gca_analyze_page('https://example.com/','<title>Just a moment...</title><main>Verify you are human</main>');
+check(gca_policy_discovery(['state'=>'complete','pages'=>[$page],'policies'=>[],'errors'=>[]])['status']==='unavailable','homepage security challenge cannot produce a false zero');
+$page=gca_analyze_page('https://example.com/','<html><title>Web</title><div id="app"></div><script src="app.js"></script></html>');
+check(gca_policy_discovery(['state'=>'complete','pages'=>[$page],'policies'=>[],'errors'=>[]])['status']==='unavailable','empty JavaScript shell is unavailable not missing documentation');
+$page=gca_analyze_page('https://example.com/','<main>'.str_repeat('Veřejně dostupný obsah webu. ',5).'</main><a href="/cookie-policy?lang=cs">Cookie policy</a>');
+check(($page['policy_link_issues'][0]['reason']??'')==='unsupported','query policy is unsupported, not a broken placeholder');
+check(gca_policy_discovery(['state'=>'complete','pages'=>[$page],'policies'=>[],'errors'=>[]])['status']==='unavailable','unsupported policy URL cannot produce a false zero');

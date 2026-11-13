@@ -72,7 +72,7 @@ function gca_cookie_policy_priority($label,$url){
 }
 function gca_analyze_page($url,$html,$setCookies=[],$status=200) {
     preg_match('~<title\b[^>]*>(.*?)</title>~is',$html,$m);
-    $result=['url'=>$url,'status'=>$status,'title'=>gca_text($m[1]??''),'bytes'=>strlen($html),'services'=>[],'cookies'=>[],'policies'=>[],'links'=>[],'dynamic_verified'=>false];
+    $result=['url'=>$url,'status'=>$status,'title'=>gca_text($m[1]??''),'bytes'=>strlen($html),'services'=>[],'cookies'=>[],'policies'=>[],'policy_link_issues'=>[],'links'=>[],'dynamic_verified'=>false];
     preg_match_all('~<(?:script|iframe|img)\b[^>]*\bsrc\s*=\s*["\x27]([^"\x27]+)["\x27]~is',$html,$sources);
     // Inline code is source evidence only. No assertion that it executed.
     preg_match_all('~<script\b[^>]*>(.*?)</script>~is',$html,$scripts);
@@ -93,12 +93,21 @@ function gca_analyze_page($url,$html,$setCookies=[],$status=200) {
     }
     preg_match_all('~<a\b[^>]*href\s*=\s*["\x27]([^"\x27]*)["\x27][^>]*>(.*?)</a>~is',$html,$links,PREG_SET_ORDER);
     foreach ($links as $a) {
-        $target=gca_resolve_url($url,$a[1]); if (!$target) continue; $label=gca_text($a[2]);
+        $label=gca_text($a[2]);$href=trim(html_entity_decode($a[1],ENT_QUOTES|ENT_HTML5,'UTF-8'));
+        $target=gca_resolve_url($url,$href);
+        if(!$target){
+            if(gca_cookie_policy_priority($label,'')>0 && !preg_match('~nastaven|settings|preferences|upravit|změnit~iu',$label))$result['policy_link_issues'][]=['url'=>$url,'label'=>$label,'href'=>substr($href,0,300),'reason'=>($href===''||$href==='#')&&!preg_match('~onclick|data-(?:action|toggle)~i',$a[0])?'placeholder':'unsupported'];
+            continue;
+        }
         $priority=gca_cookie_policy_priority($label,$target);
         if($priority>0)$result['policies'][$target]=['url'=>$target,'label'=>$label,'priority'=>$priority];
         if (parse_url($target,PHP_URL_HOST)===parse_url($url,PHP_URL_HOST) && !preg_match('~/(wp-admin|wp-json|wp-login|logout|cart|checkout|kosik|odhlas|cdn-cgi(?:/|$))|\.(jpg|png|svg|pdf|zip|xml|js|css)(/|$)~i',$target)) $result['links'][$target]=$target;
     }
     $result['links']=array_values($result['links']);$result['policies']=array_values($result['policies']);
+    $visible=gca_policy_text($html);
+    $available=strlen($visible)>=40&&!preg_match('~just a moment|checking your browser|verify you are human|ověřte.{0,20}(?:člověk|člověkem)|attention required.{0,40}cloudflare~iu',$visible.' '.$result['title']);
+    $result['content_available']=$available;
+    if(!$available)$result['content_reason']='Načtený zdroj obsahuje bezpečnostní výzvu nebo nemá dostatečný čitelný obsah. Dostupnost dokumentace proto nelze vyhodnotit.';
     $result['banner_hint']=(bool)preg_match('~cookieyes|cky-consent|cookiebot|cmplz-|onetrust|cc-window|cookie-consent|cookie-law-info~i',$html);
     $result['consent_hint']=(bool)preg_match('~(?:gtag\s*\(\s*["\x27]consent|ad_storage|analytics_storage|ad_user_data|ad_personalization)~i',$html);
     return $result;

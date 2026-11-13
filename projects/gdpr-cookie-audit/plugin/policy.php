@@ -105,3 +105,14 @@ function gca_discover_queue($queue,$cursor,$page,$manual){
     foreach($candidates as $item){if(count($done)>=5)break;if(isset($seen[$item['url']]))continue;$done[]=$item;$seen[$item['url']]=true;}
     return $done;
 }
+
+function gca_policy_discovery($job){
+    $issues=[];foreach($job['pages']??[] as $page)foreach($page['policy_link_issues']??[] as $issue)$issues[$issue['url'].'|'.$issue['label'].'|'.$issue['href']]=$issue;
+    $status='pending';
+    if(($job['state']??'running')!=='running'){
+        if(!empty($job['policies']))$status='found';
+        elseif(empty($job['pages'])||!empty($job['errors'])||count(array_filter($job['pages'],fn($p)=>isset($p['content_available'])&&!$p['content_available']))||count(array_filter($issues,fn($i)=>($i['reason']??'placeholder')!=='placeholder')))$status='unavailable';
+        else $status='missing';
+    }
+    return ['status'=>$status,'scope_pages'=>count($job['pages']??[]),'issues'=>array_values($issues)];
+}

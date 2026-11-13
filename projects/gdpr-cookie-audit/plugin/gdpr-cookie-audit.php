@@ -2,7 +2,7 @@
 /**
  * Plugin Name: GDPR Cookies – bezplatný audit webu
  * Description: Přehledná kontrola cookies, zdrojových integrací a zásad cookies s PDF zprávou.
- * Version: 1.6.3
+ * Version: 1.7.2
  * Requires PHP: 8.0
  * Author: Martin Legnavsky
  * Update URI: https://plaginy.odladeni.cz/gdpr-cookie-audit
@@ -11,7 +11,8 @@
 if (!defined('ABSPATH')) exit;
 require_once __DIR__.'/core.php';
 require_once __DIR__.'/runtime.php';
-define('GCA_VERSION','1.6.3');
+define('GCA_VERSION','1.7.2');
+require_once __DIR__.'/archive.php';
 
 function gca_asset_url($file) { return plugins_url('assets/'.$file,__FILE__); }
 function gca_enqueue() {
@@ -20,7 +21,9 @@ function gca_enqueue() {
     wp_enqueue_script('gca-font',gca_asset_url('font.js'),['gca-pdf'],GCA_VERSION,true);
     wp_enqueue_script('gca-model',gca_asset_url('model.js'),[],GCA_VERSION,true);
     wp_enqueue_script('gca-pdf-export',gca_asset_url('pdf.js'),['gca-font','gca-model'],GCA_VERSION,true);
-    wp_enqueue_script('gca-audit',gca_asset_url('audit.js'),['gca-pdf-export'],GCA_VERSION,true);
+    wp_enqueue_script('gca-history',gca_asset_url('history.js'),[],GCA_VERSION,true);
+    wp_enqueue_script('gca-audit',gca_asset_url('audit.js'),['gca-pdf-export','gca-history'],GCA_VERSION,true);
+    if(current_user_can('manage_options'))wp_localize_script('gca-audit','GCAAdmin',['nonce'=>wp_create_nonce('wp_rest')]);
 }
 add_action('wp_enqueue_scripts',function(){if(is_page('kontrola-cookies'))gca_enqueue();});
 function gca_dashboard(){ gca_enqueue(); ob_start();require __DIR__.'/dashboard.php';return ob_get_clean(); }
@@ -54,12 +57,12 @@ function gca_limit($key,$max) {
 function gca_session($request) {
     $id=$request->get_param('id');$token=$request->get_header('x-audit-token');
     if (!is_string($id) || !preg_match('/^[a-f0-9]{32}$/',$id) || !is_string($token)) return null;
-    $job=get_transient('gca_job_'.$id);
-    if (!$job || ($job['expires_at']??0)<time() || !hash_equals($job['token_hash'],hash('sha256',$token))) return null;
+    $job=gca_load_job($id);
+    if (!$job || (($job['storage']??'')!=='permanent'&&($job['expires_at']??0)<time()) || !hash_equals($job['token_hash'],hash('sha256',$token))) return null;
     return $job;
 }
 function gca_public_report($job) {
-     $job['total']=count($job['queue']);
+     $job['total']=count($job['queue']);$job['policy_discovery']=gca_policy_discovery($job);
     unset($job['token_hash'],$job['queue'],$job['ip_hash'],$job['manual_policy'],$job['_declaration_clients']);
     foreach($job['policies'] as &$policy) unset($policy['_text'],$policy['_dynamic_table'],$policy['_declaration_client']);unset($policy);
     return $job;
@@ -79,8 +82,8 @@ function gca_start($request) {
     $runtime=gca_runtime_status();
     $runtimeReasons=['sandbox_unavailable'=>'Nepodařilo se ověřit izolaci webových procesů měřicího prohlížeče. Testy přijetí, odmítnutí, skutečného úložiště a kontrastu neproběhly.','system_library_missing'=>'Na hostingu chybí knihovny potřebné ke spuštění měřicího prohlížeče.','installation_failed'=>'Měřicí prohlížeč se na hostingu nepodařilo připravit.'];
     $browserReason=($runtime['state']??'')==='installing'?'Probíhá příprava měřicího prohlížeče. Tato kontrola zatím analyzuje veřejné dokumenty a deklarace.':(($runtime['state']??'')==='ready'?'Prohlížečové prostředí bylo ověřeno. V této verzi ještě není zapojeno měření skutečných scénářů.':($runtimeReasons[$runtime['reason']??'']??'Měřicí prohlížeč není dostupný. Skutečné interakce, úložiště a kontrast nebyly měřeny.'));
-    $job=['id'=>$id,'token_hash'=>hash('sha256',$token),'url'=>$url,'started_at'=>gmdate('c'),'expires_at'=>time()+HOUR_IN_SECONDS,'finished_at'=>null,'state'=>'running','cursor'=>0,'manual_policy'=>$policyUrl,'queue'=>[['url'=>$url,'kind'=>'page']],'pages'=>[],'policies'=>[],'errors'=>[],'declared_cookies'=>[],'declaration_sources'=>[],'declaration_errors'=>[],'_declaration_clients'=>[],'engine'=>'source','browser'=>['available'=>false,'status'=>'unverified','reason'=>$browserReason],'scope'=>5];
-    set_transient('gca_job_'.$id,$job,max(1,$job['expires_at']-time()));
+    $job=['id'=>$id,'token_hash'=>hash('sha256',$token),'url'=>$url,'started_at'=>gmdate('c'),'storage'=>'permanent','expires_at'=>null,'finished_at'=>null,'state'=>'running','cursor'=>0,'manual_policy'=>$policyUrl,'queue'=>[['url'=>$url,'kind'=>'page']],'pages'=>[],'policies'=>[],'errors'=>[],'declared_cookies'=>[],'declaration_sources'=>[],'declaration_errors'=>[],'_declaration_clients'=>[],'engine'=>'source','browser'=>['available'=>false,'status'=>'unverified','reason'=>$browserReason],'scope'=>5];
+    if(!gca_save_job($job))return gca_error('Měření se nepodařilo uložit do historie. Zkuste to znovu.',503);
     return ['id'=>$id,'token'=>$token,'report'=>gca_public_report($job)];
 }
 function gca_step($request) {
@@ -118,13 +121,15 @@ function gca_step($request) {
                 $ids=[];$cookies=[];foreach($job['pages'] as $p){if(empty($p['is_target']))continue;foreach($p['services'] as $s)$ids[]=$s['id'];$cookies=array_merge($cookies,$p['cookies']);}
                 $assessment=gca_analyze_policy_documents($job['policies'],$ids,$cookies,$job['declared_cookies']??[]);$job['policies']=$assessment?[$assessment]:[];
             }
-            set_transient('gca_job_'.$id,$job,max(1,$job['expires_at']-time()));
+            if(!gca_save_job($job))return gca_error('Měření se nepodařilo uložit do historie. Zkuste to znovu.',503);
             return gca_public_report($job);
         } finally { gca_unlock('worker_'.$slot); }
     } finally { gca_unlock('job_'.$id); }
 }
 add_action('rest_api_init',function() {
-    register_rest_route('gdpr-audit/v1','/status',['methods'=>'GET','permission_callback'=>'__return_true','callback'=>function(){return ['version'=>GCA_VERSION,'source_audit'=>function_exists('curl_init'),'browser_audit'=>false,'runtime'=>gca_runtime_status()];}]);
+    register_rest_route('gdpr-audit/v1','/status',['methods'=>'GET','permission_callback'=>'__return_true','callback'=>function(){return ['version'=>GCA_VERSION,'source_audit'=>function_exists('curl_init'),'browser_audit'=>false,'runtime'=>gca_runtime_status(),'archive_ready'=>(int)get_option('gca_archive_schema',0)===1,'archive_import_complete'=>(bool)get_option('gca_archive_import_complete',false)];}]);
+    register_rest_route('gdpr-audit/v1','/report',['methods'=>'POST','permission_callback'=>'gca_same_origin','callback'=>'gca_report']);
+    register_rest_route('gdpr-audit/v1','/admin-report',['methods'=>'POST','permission_callback'=>function(){return current_user_can('manage_options');},'callback'=>'gca_admin_report']);
     register_rest_route('gdpr-audit/v1','/start',['methods'=>'POST','permission_callback'=>'gca_same_origin','callback'=>'gca_start']);
     register_rest_route('gdpr-audit/v1','/step',['methods'=>'POST','permission_callback'=>'gca_same_origin','callback'=>'gca_step']);
 });

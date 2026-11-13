@@ -1,7 +1,7 @@
 {
   "slug": "gdpr-cookie-audit",
   "name": "GDPR Cookies – bezplatný audit webu",
-  "version": "1.6.3",
+  "version": "1.7.2",
   "author": "Martin Legnavsky",
   "update_uri": "https://plaginy.odladeni.cz/gdpr-cookie-audit",
   "description": "Bezplatná kontrola veřejných stránek, zdrojových integrací a zásad cookies.",
@@ -11,6 +11,8 @@
     "Přehled a PDF zpráva"
   ],
   "changelog": [
+    "1.7.2: Převod dosud existujících starších měření z dočasné paměti do soukromého trvalého archivu.",
+    "1.7.1: Trvalý soukromý archiv všech zahájených měření, historie návštěvníka, administrace a opětovné stažení PDF. Chybějící dokumentace a nefunkční odkazy jsou konkrétní nálezy; blokované a nepodporované zdroje nejsou falešná nula.",
     "1.6.3: Ověření webového procesu při skutečné navigaci na místní zkušební dokument.",
     "1.6.2: Ověření izolace webových procesů Firefoxu odděleně od pomocných procesů prohlížeče.",
     "1.6.1: Příprava knihoven Firefoxu zohledňuje soukromé knihovny i při ověření prostředí.",

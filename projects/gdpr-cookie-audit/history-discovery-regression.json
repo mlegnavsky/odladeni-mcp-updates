@@ -1,0 +1,23 @@
+{
+  "version": "1.7.2",
+  "ui_verified_version": "1.7.1",
+  "target": "https://spd.cz/",
+  "pages": 5,
+  "document_discovery": "missing",
+  "placeholder_links": 5,
+  "score": {
+    "passed": 0,
+    "total": 6,
+    "percent": 0
+  },
+  "storage": "permanent",
+  "reload_same_id": true,
+  "second_domain_distinct_result": true,
+  "history_reopened_original": true,
+  "pdf_checked": true,
+  "browser_scenarios_performed": false,
+  "tests": {
+    "php_assertions_including_repeated": 142,
+    "node_tests": 29
+  }
+}
