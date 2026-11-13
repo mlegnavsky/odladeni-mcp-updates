@@ -26,3 +26,24 @@ represented as passing or as completed features. No full GDPR compliance score i
 The content bridge returned a memory error after applying the page publication and tools link.
 Fresh reads verified both actual changes. The operation receipt remains pending, so it is not
 used as a successful transaction receipt. Existing page backups remain at the bridge.
+
+
+## Cloudflare IPv6 regression fix — 2026-11-13
+
+User-reported stranapro.cz was wrongly rejected as a private network. DNS returned public
+Cloudflare A addresses 104.21.40.189 / 172.67.156.78 and AAAA addresses in 2606:4700::/32.
+The extra IPv6 guard required a literal first byte 0x20 (2000::/8) instead of global unicast
+2000::/3. Reproduced old rejection for Cloudflare ranges. Corrected the prefix mask, retaining
+private/reserved validation and explicit documentation ranges 2001:db8::/32 and 3fff::/20.
+Independent focused review confirmed no demonstrated internal-network SSRF path; the review's
+3fff documentation-range finding was addressed before deployment.
+
+Live follow-up also identified /cdn-cgi/l/email-protection being crawled as a content page;
+Cloudflare technical /cdn-cgi/ paths are now excluded. Production plugin 1.1.4 deployed.
+ZIP SHA256: 4865b46a3d80885eabfaf85846d1880887b0c127ac63683447c5c8f8cfe6f16b.
+
+Regression verification: 50 core assertions, 7 WordPress assertions, 5 Node tests all passing.
+Tests cover all seven published Cloudflare IPv6 prefixes, nonpublic/documentation addresses,
+and excluding the Cloudflare email protection endpoint from content-page discovery.
+
+Final live regression: stranapro.cz completed; five public pages including /pravidla-cookies/ returned HTTP 200, zero fetch errors. See stranapro-regression.json.

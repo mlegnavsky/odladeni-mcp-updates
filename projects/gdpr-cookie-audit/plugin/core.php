@@ -16,7 +16,14 @@ function gca_public_ip($ip) {
     if (!filter_var($ip,FILTER_VALIDATE_IP,FILTER_FLAG_NO_PRIV_RANGE|FILTER_FLAG_NO_RES_RANGE)) return false;
     // Explicit special-purpose ranges also cover mapped IPv4 and documentation networks.
     $packed=inet_pton($ip);
-    if (strlen($packed)===16) return substr($packed,0,1)==="\x20" && substr($packed,0,4)!=="\x20\x01\x0d\xb8";
+    // Global unicast is 2000::/3, not just the 2000::/8 prefix.
+    if (strlen($packed)===16) {
+        if ((ord($packed[0]) & 0xe0)!==0x20) return false;
+        if (substr($packed,0,4)==="\x20\x01\x0d\xb8") return false;
+        // RFC 9637 documentation space: 3fff::/20.
+        if (substr($packed,0,2)==="\x3f\xff" && (ord($packed[2]) & 0xf0)===0) return false;
+        return true;
+    }
     $n=unpack('N',$packed)[1];
     foreach ([[0xC0000000,24],[0xC0000200,24],[0xC6336400,24],[0xCB007100,24],[0x64400000,10],[0xC6120000,15],[0xE0000000,4]] as [$net,$bits]) {
         $mask=(0xFFFFFFFF << (32-$bits)) & 0xFFFFFFFF;
@@ -79,7 +86,7 @@ function gca_analyze_page($url,$html,$setCookies=[],$status=200) {
     foreach ($links as $a) {
         $target=gca_resolve_url($url,$a[1]); if (!$target) continue; $label=gca_text($a[2]);
         if (preg_match('~cookie|ochran[ay]\s+osobn|privacy|zásad|zasad|soubor[ůu]\s+cookie~iu',$label.' '.parse_url($target,PHP_URL_PATH))) $result['policies'][$target]=['url'=>$target,'label'=>$label];
-        if (parse_url($target,PHP_URL_HOST)===parse_url($url,PHP_URL_HOST) && !preg_match('~/(wp-admin|wp-json|wp-login|logout|cart|checkout|kosik|odhlas)|\.(jpg|png|svg|pdf|zip|xml|js|css)(/|$)~i',$target)) $result['links'][$target]=$target;
+        if (parse_url($target,PHP_URL_HOST)===parse_url($url,PHP_URL_HOST) && !preg_match('~/(wp-admin|wp-json|wp-login|logout|cart|checkout|kosik|odhlas|cdn-cgi(?:/|$))|\.(jpg|png|svg|pdf|zip|xml|js|css)(/|$)~i',$target)) $result['links'][$target]=$target;
     }
     $result['links']=array_values($result['links']);$result['policies']=array_values($result['policies']);
     $result['banner_hint']=(bool)preg_match('~cookieyes|cky-consent|cookiebot|cmplz-|onetrust|cc-window|cookie-consent|cookie-law-info~i',$html);

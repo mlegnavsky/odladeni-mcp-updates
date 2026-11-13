@@ -7,10 +7,18 @@ foreach (['http://127.0.0.1', 'http://[::1]', 'https://user:pass@example.com', '
 }
 foreach (['127.0.0.1','10.0.0.2','169.254.169.254','::1','::ffff:127.0.0.1','fc00::1','192.0.2.1'] as $bad) check(!gca_public_ip($bad), 'private/reserved ' . $bad);
 check(gca_public_ip('8.8.8.8'), 'public address');
+foreach (['2400:cb00::1','2606:4700:3037::ac43:ac3e','2803:f800::1','2405:b500::1','2405:8100::1','2a06:98c0::1','2c0f:f248::1','2a00:1450:4001::1'] as $public) {
+    check(gca_public_ip($public), 'public CDN IPv6 '.$public);
+}
+foreach (['2001:db8::1','3fff::1','3fff:fff:ffff::1','fe80::1','ff02::1','fd00::1','::ffff:10.0.0.1'] as $private) {
+    check(!gca_public_ip($private),'nonpublic IPv6 '.$private);
+}
 check(gca_resolve_url('https://example.com/a/b', '../cookies/') === 'https://example.com/cookies/', 'relative resolution');
 check(gca_resolve_url('https://example.com/a/b', '/') === 'https://example.com/', 'root has one slash');
 $navigation=gca_analyze_page('https://gdpr-cookies.cz/', '<a href="/">Domů</a><a href="/sluzby/">Služby</a><a href="/zasady-cookies/">Zásady cookies</a>');
 check(count($navigation['policies'])===1 && $navigation['policies'][0]['url']==='https://gdpr-cookies.cz/zasady-cookies/','domain name does not classify navigation as policy');
+$cfLinks=gca_analyze_page('https://www.stranapro.cz/', '<a href="/cdn-cgi/l/email-protection#abc">E-mail</a><a href="/kontakt/">Kontakt</a>');
+check($cfLinks['links']===['https://www.stranapro.cz/kontakt/'],'Cloudflare internal endpoints are not content pages');
 $html = '<html lang="cs"><head><title>Test</title><script src="https://www.googletagmanager.com/gtag/js?id=G-123"></script></head><body><a href="/zasady-cookies">Zásady cookies</a><p>Odmítnout vše</p></body></html>';
 $page = gca_analyze_page('https://example.com/', $html, ['session=SECRET; Path=/; Secure; HttpOnly; SameSite=Lax'], 200);
 check($page['title'] === 'Test', 'title extracted');
