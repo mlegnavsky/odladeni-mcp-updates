@@ -2,7 +2,7 @@
 /**
  * Plugin Name: GDPR Cookies – bezplatný audit webu
  * Description: Přehledná kontrola cookies, zdrojových integrací a zásad cookies s PDF zprávou.
- * Version: 2.2.2
+ * Version: 2.2.3
  * Requires PHP: 8.0
  * Author: Martin Legnavsky
  * Update URI: https://plaginy.odladeni.cz/gdpr-cookie-audit
@@ -11,7 +11,7 @@
 if (!defined('ABSPATH')) exit;
 require_once __DIR__.'/core.php';
 require_once __DIR__.'/runtime.php';
-define('GCA_VERSION','2.2.2');
+define('GCA_VERSION','2.2.3');
 require_once __DIR__.'/archive.php';
 require_once __DIR__.'/browser.php';
 require_once __DIR__.'/compliance.php';
@@ -30,8 +30,9 @@ function gca_enqueue() {
     wp_enqueue_script('gca-pdf-detail',gca_asset_url('pdf-detail.js'),['gca-pdf-export'],GCA_VERSION,true);
     wp_enqueue_script('gca-history',gca_asset_url('history.js'),[],GCA_VERSION,true);
     wp_enqueue_script('gca-audit',gca_asset_url('audit.js'),['gca-pdf-export','gca-history','gca-view','gca-scan'],GCA_VERSION,true);
-    if(current_user_can('manage_options'))wp_localize_script('gca-audit','GCAAdmin',['nonce'=>wp_create_nonce('wp_rest')]);
+    if(is_admin()&&current_user_can('manage_options'))wp_localize_script('gca-audit','GCAAdmin',['nonce'=>wp_create_nonce('wp_rest'),'context'=>true]);
 }
+add_action('admin_enqueue_scripts',function($hook){if($hook==='tools_page_gca-measurements'&&isset($_GET['measurement'])&&current_user_can('manage_options'))gca_enqueue();});
 add_action('wp_enqueue_scripts',function(){if(is_page('kontrola-cookies'))gca_enqueue();});
 function gca_dashboard(){ gca_enqueue(); ob_start();require __DIR__.'/dashboard.php';return ob_get_clean(); }
 add_shortcode('gdpr_cookie_audit','gca_dashboard');

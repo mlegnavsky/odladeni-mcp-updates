@@ -393,3 +393,23 @@ these two new observations. Final2.2.2 reloaded same saved result and loaded ver
 assets. PDF downloaded through real site button,3 A4 pages; final EU section kept
 whole on page3 and rendered/visually inspected. Evidence images committed; actual
 measurement URL/owner key/raw snapshots deliberately omitted.
+
+
+## Internal analysis restricted to wp-admin — 2026-11-13
+
+2.2.3 removes the public internal-analysis bar, login hint and opening control,
+including when an administrator views the public report. Internal report markup
+and rendering require an explicit admin-context flag localized only in wp-admin.
+Legacy public admin fragments no longer fetch internal data. Administrator history
+now links to tools.php?page=gca-measurements&measurement=ID, where manage_options
+and the existing nonce-protected admin-report endpoint provide detail and exports.
+Admin views do not replace their wp-admin address with public share URLs.
+
+Regression test first failed on the old public bar, then passed for anonymous,
+logged-in public, accidental internal report and authorized admin-context cases.
+Full Node suite53/53 passed; archive PHP suite passed without warnings/errors;
+package PHP/JS lint and diff --check passed. Production active2.2.3 at17:36:35Z,
+backup8aa53bb7a5580a3b3949849a7806ed8c; ZIP SHA256
+13289a4a5a9c5888ee4066a0792cba4b7c604a9311e1041649b036a779c4b735.
+Live saved report reloaded: zero internal bar, zero internal section, zero internal
+opening buttons; versioned2.2.3 assets. Signed-in wp-admin visual QA was not performed.

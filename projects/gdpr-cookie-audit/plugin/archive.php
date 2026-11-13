@@ -48,12 +48,14 @@ add_action('plugins_loaded','gca_archive_install');
 add_action('admin_menu',function(){add_management_page('Historie měření cookies','Měření cookies','manage_options','gca-measurements','gca_archive_admin');});
 function gca_archive_admin(){
     if(!current_user_can('manage_options'))return;
+    $measurement=$_GET['measurement']??'';
+    if(is_string($measurement)&&preg_match('/^[a-f0-9]{32}$/',$measurement)){echo '<div class="wrap"><h1>Interní analýza měření cookies</h1><p><a href="'.esc_url(admin_url('tools.php?page=gca-measurements')).'">← Zpět na historii měření</a></p>'.gca_dashboard().'</div>';return;}
     global $wpdb;$page=max(1,(int)($_GET['paged']??1));$limit=25;$offset=($page-1)*$limit;
     $rows=$wpdb->get_results($wpdb->prepare('SELECT id,url,started_at,updated_at,state,job_json FROM '.gca_archive_table().' ORDER BY started_at DESC,id DESC LIMIT %d OFFSET %d',$limit,$offset),ARRAY_A);
     $total=(int)$wpdb->get_var('SELECT COUNT(*) FROM '.gca_archive_table());
     echo '<div class="wrap"><h1>Historie měření cookies</h1><p>Trvale uložená měření: '.(int)$total.'. Zahrnuje rozpracované i neúspěšné pokusy. Přístup k tomuto přehledu má pouze správce.</p><table class="widefat striped"><thead><tr><th>Web / ID</th><th>Zahájeno</th><th>Stav</th><th>Výsledek</th></tr></thead><tbody>';
     $labels=['running'=>'Rozpracované','complete'=>'Zdrojová kontrola dokončena','partial'=>'Částečný výsledek','failed'=>'Neúspěšné'];
-    foreach($rows as $row){$saved=json_decode($row['job_json'],true);$link=is_array($saved)?gca_report_url($saved):home_url('/kontrola-cookies/');echo '<tr><td>'.esc_html($row['url']).'<br><code>'.esc_html($row['id']).'</code></td><td>'.esc_html(wp_date('j. n. Y H:i',strtotime($row['started_at']))).'</td><td>'.esc_html($labels[$row['state']]??$row['state']).'</td><td><a class="button" href="'.esc_url($link).'" target="_blank" rel="noopener noreferrer">Otevřít a stáhnout PDF</a></td></tr>';}
+    foreach($rows as $row){$saved=json_decode($row['job_json'],true);$link=add_query_arg(['page'=>'gca-measurements','measurement'=>$row['id']],admin_url('tools.php'));echo '<tr><td>'.esc_html($row['url']).'<br><code>'.esc_html($row['id']).'</code></td><td>'.esc_html(wp_date('j. n. Y H:i',strtotime($row['started_at']))).'</td><td>'.esc_html($labels[$row['state']]??$row['state']).'</td><td><a class="button" href="'.esc_url($link).'" target="_blank" rel="noopener noreferrer">Interní analýza a PDF</a></td></tr>';}
     if(!$rows)echo '<tr><td colspan="4">Zatím nejsou uložená měření.</td></tr>';
     echo '</tbody></table><p>';
     if($page>1)echo '<a class="button" href="'.esc_url(add_query_arg(['page'=>'gca-measurements','paged'=>$page-1],admin_url('tools.php'))).'">Předchozí</a> ';
