@@ -119,3 +119,31 @@ Empty/blocked/incomplete documents cannot produce a passing absence result. Inte
 JS storage and banner screenshots still require a working isolated browser host; the existing hosting
 continues to block Chromium sandbox (confirmed before this change). This release automates document
 assessment, not end-to-end consent scenarios or a complete legal certification.
+
+
+## Percentage and detailed documentation defects — 2026-11-13
+
+Deployed final plugin1.5.2 only to gdpr-cookies.cz, SHA256:
+2a5dc4acf882d9f3bb07fe606d291e546c39711c89504f309da9e07a46c386f8.
+Final update backup: aa01875f1a44f25060660563dc99650a.
+
+Prominent shared UI/PDF cookie-documentation score: six text checks plus each observed service and
+cookie documentation match, each worth one point. Shows passed/total, all scored criteria and formula.
+Missing content/conflicting wording now produce document errors with precise recommendations.
+Missing content label: Chybí v dostupné dokumentaci. Scope is explicitly documentation; browser
+behavior and visual contrast are not represented as measured. Full-website compliance is not scored.
+
+96 PHP assertions and 20 Node tests pass. Independent review found two important score problems,
+both reproduced RED then fixed: availability/truncation metadata now suppresses percent even when
+all individual checks have known outcomes; a rounded partial score can never become 100. UI's full
+completion wording independently requires passed===total. PHP/JS lint and whitespace check pass.
+
+Live UI scan began2026-11-13T13:15:56Z (14:15:56 Europe/Prague): stranapro.cz completed5 pages,
+allHTTP200, 3/8 document criteria passed ->38%. Main score visible, concrete errors reported.
+Downloaded PDF parsed:38%, numerator/denominator, full criteria breakdown, missing-content label,
+no manual-verification prompt. Seven pages. Final1.5.2 only changes title pagination; current renderer
+built from that exact public report and first page visually verified, removing an orphaned heading.
+Evidence: document-score-regression.json. UI screenshot captured during1.5.1; UI unchanged in1.5.2.
+
+The source measurement engine and text rules retain the prior documented bounds. No Chromium
+sandbox bypass or infrastructure changes. Browser consent/contrast measurement remains unavailable.

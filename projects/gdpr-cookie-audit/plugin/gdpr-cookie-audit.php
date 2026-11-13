@@ -2,7 +2,7 @@
 /**
  * Plugin Name: GDPR Cookies – bezplatný audit webu
  * Description: Přehledná kontrola cookies, zdrojových integrací a zásad cookies s PDF zprávou.
- * Version: 1.4.1
+ * Version: 1.5.2
  * Requires PHP: 8.0
  * Author: Martin Legnavsky
  * Update URI: https://plaginy.odladeni.cz/gdpr-cookie-audit
@@ -11,7 +11,7 @@
 if (!defined('ABSPATH')) exit;
 require_once __DIR__.'/core.php';
 require_once __DIR__.'/runtime.php';
-define('GCA_VERSION','1.4.1');
+define('GCA_VERSION','1.5.2');
 
 function gca_asset_url($file) { return plugins_url('assets/'.$file,__FILE__); }
 function gca_enqueue() {

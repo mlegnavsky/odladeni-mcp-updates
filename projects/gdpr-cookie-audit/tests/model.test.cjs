@@ -38,6 +38,38 @@ test('automatic documentation findings preserve outcome, source and specific rec
  const r=model.summarize({url:'https://example.com/',pages:[],policies:[{url:'https://example.com/cookies/',checks:{retention:{label:'Platnost',status:'warning',outcome:'missing',source_url:null,evidence:'Nenalezeno ve dvou dokumentech.',recommendation:'Doplňte životnost každé cookie.'},withdrawal:{label:'Odvolání',status:'pass',outcome:'found',source_url:'https://example.com/tabulka-cookies/',evidence:'Změňte souhlas v nastavení.'}}}]});
  assert.equal(r.findings.find(f=>f.id==='policy-0-retention').fix,'Doplňte životnost každé cookie.');
  assert.equal(r.findings.find(f=>f.id==='policy-0-withdrawal').url,'https://example.com/tabulka-cookies/');
- assert.equal(model.policyOutcomeLabel({outcome:'missing'}),'Nenalezeno v dokumentaci');
+ assert.equal(model.policyOutcomeLabel({outcome:'missing'}),'Chybí v dostupné dokumentaci');
  assert.equal(model.policyOutcomeLabel({outcome:'conflict'}),'Rozporná formulace');
+});
+function scoredReport(overrides={}){
+ const checks=Object.fromEntries(['purposes','retention','withdrawal','choice','inventory','implied_consent'].map(id=>[id,{label:id,status:'pass',outcome:id==='implied_consent'?'not_detected':'found'}]));
+ return {state:'complete',url:'https://example.com/',pages:[],policies:[{url:'https://example.com/cookies/',checks:{...checks,...overrides},services:[],cookies:[]}],errors:[],browser:{available:false}};
+}
+test('documentation percent uses explicit checks and does not claim browser compliance',()=>{
+ const r=scoredReport({retention:{status:'warning',outcome:'missing'},withdrawal:{status:'warning',outcome:'missing'},inventory:{status:'warning',outcome:'missing'},implied_consent:{status:'warning',outcome:'conflict'}});
+ const score=model.summarize(r).documentationScore;
+ assert.equal(score.percent,33);assert.equal(score.passed,2);assert.equal(score.total,6);assert.equal(score.scope,'documentation');
+});
+test('unavailable document data never becomes zero or a completed percentage',()=>{
+ const score=model.summarize(scoredReport({retention:{status:'unknown',outcome:'unavailable'}})).documentationScore;
+ assert.equal(score.percent,null);assert.equal(score.unavailable,1);
+ assert.equal(model.summarize({state:'running',pages:[],policies:[],errors:[]}).documentationScore.percent,null);
+});
+test('missing observed services reduce document score and remain explicit criteria',()=>{
+ const r=scoredReport();r.policies[0].services=[{id:'meta',name:'Meta',status:'warning'}];
+ const score=model.summarize(r).documentationScore;
+ assert.equal(score.percent,86);assert.equal(score.total,7);assert.equal(score.criteria.at(-1).status,'warning');
+ assert.equal(model.policyOutcomeLabel({outcome:'missing'}),'Chybí v dostupné dokumentaci');
+});
+test('document availability suppresses percent even if all check outcomes are otherwise known',()=>{
+ const r=scoredReport({implied_consent:{status:'error',outcome:'conflict'}});
+ r.policies[0].documents=[{url:'https://example.com/cookies/',available:true},{url:'https://example.com/table/',available:false}];
+ assert.equal(model.summarize(r).documentationScore.percent,null);
+ r.policies[0].documents[1]={url:'https://example.com/table/',available:true,text_truncated:true};
+ assert.equal(model.summarize(r).documentationScore.percent,null);
+});
+test('rounded percentages never claim full completion when one criterion failed',()=>{
+ const r=scoredReport();r.policies[0].cookies=Array.from({length:200},(_,i)=>({name:'cookie_'+i,status:i===199?'error':'pass'}));
+ const score=model.summarize(r).documentationScore;
+ assert.equal(score.passed,205);assert.equal(score.total,206);assert.equal(score.percent,99);
 });

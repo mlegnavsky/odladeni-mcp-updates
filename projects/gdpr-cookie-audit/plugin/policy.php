@@ -28,7 +28,7 @@ function gca_policy_excerpt($block,$pattern){
     preg_match('~^.{0,320}~su',$block,$m);return $m[0]??'';
 }
 function gca_policy_check($label,$outcome,$evidence,$url,$fix){
-    return ['label'=>$label,'status'=>$outcome==='unavailable'?'unknown':(in_array($outcome,['found','not_detected'],true)?'pass':'warning'),'outcome'=>$outcome,'evidence'=>$evidence,'source_url'=>$url,'recommendation'=>$fix];
+    return ['label'=>$label,'status'=>$outcome==='unavailable'?'unknown':(in_array($outcome,['found','not_detected'],true)?'pass':'error'),'outcome'=>$outcome,'evidence'=>$evidence,'source_url'=>$url,'recommendation'=>$fix];
 }
 function gca_analyze_policy($url,$html,$serviceIds=[],$cookies=[]){
     $text=gca_policy_text($html);$blocks=preg_split('/\R|(?<=[.!?])\s+(?=[\p{Lu}])/u',$text);$names=gca_policy_inventory($text,$cookies);
@@ -49,18 +49,18 @@ function gca_analyze_policy($url,$html,$serviceIds=[],$cookies=[]){
             if(preg_match($pattern,$block))$found=gca_policy_excerpt($block,$pattern);
         }
         $outcome=$conflict?'conflict':($found?'found':'missing');
-        $evidence=$conflict?('Rozporná formulace v dokumentaci: '.$conflict):($found??('V kontrolovaných dokumentech nerozpoznáno: '.$missing.'.'));
+        $evidence=$conflict?('Rozporná formulace v dokumentaci: '.$conflict):($found??('V dostupné veřejné dokumentaci chybí údaj: '.$missing.'.'));
         $checks[$id]=gca_policy_check($label,$outcome,$evidence,$url,$outcome==='found'?'Informace byla nalezena; konkrétní zdroj je uveden u výsledku.':$fix);
     }
-    $checks['inventory']=gca_policy_check('Přehled konkrétních cookies',$names?'found':'missing',$names?'Rozpoznané názvy v dokumentaci: '.implode(', ',$names):'V kontrolovaných dokumentech nebyl rozpoznán seznam názvů cookies.',$url,$names?'Nalezený přehled se porovnává s cookies dostupnými při měření.':'Doplňte veřejně dostupnou tabulku s názvy cookies, účely, poskytovateli a dobou platnosti.');
+    $checks['inventory']=gca_policy_check('Přehled konkrétních cookies',$names?'found':'missing',$names?'Rozpoznané názvy v dokumentaci: '.implode(', ',$names):'V dostupné veřejné dokumentaci chybí přehled konkrétních názvů cookies.',$url,$names?'Nalezený přehled se porovnává s cookies dostupnými při měření.':'Doplňte veřejně dostupnou tabulku s názvy cookies, účely, poskytovateli a dobou platnosti.');
     $bad=null;
     foreach($blocks as $block){if(preg_match('~(?:používáním|prohlížením|návštěvou|pokračováním).{0,120}(?:souhlasíte|souhlas)~iu',$block)&&!preg_match('~neudělujete|nedáváte|nevyjadřujete|nesouhlasíte|neznamená.{0,25}souhlas|nepovažuje~iu',$block)){$bad=gca_policy_excerpt($block,'~(?:používáním|prohlížením|návštěvou|pokračováním).{0,120}(?:souhlasíte|souhlas)~iu');break;}}
     $checks['implied_consent']=gca_policy_check('Souhlas pouhou návštěvou — kontrola formulace',$bad?'conflict':'not_detected',$bad?'Nalezena formulace, která odvozuje souhlas z návštěvy webu: '.$bad:'V kontrolovaných dokumentech nebyla rozpoznána formulace souhlasu pouhou návštěvou. Toto je kontrola textu; chování lišty tím není ověřeno.',$url,$bad?'Odstraňte formulaci souhlasu pouhou návštěvou a popište aktivní volbu návštěvníka.':'Tato kontrola se týká formulace dokumentu. Skutečné udělení souhlasu patří do samostatného prohlížečového testu.');
     if($text===''||preg_match('~just a moment|checking your browser|verify you are human|ověřte.{0,20}(?:člověk|člověkem)|attention required.{0,40}cloudflare~iu',$text))foreach($checks as $id=>$check)$checks[$id]=gca_policy_check($check['label'],'unavailable','Dokument nemá dostupný text nebo místo něj byla načtena bezpečnostní výzva. Kontrolu jeho obsahu nebylo možné provést.',$url,'Zpřístupněte cookie dokument pro automatickou kontrolu a poté spusťte nové měření.');
     $out=['url'=>$url,'checks'=>$checks,'services'=>[],'cookies'=>[],'text_length'=>strlen($text),'text_truncated'=>strlen($text)>=149996];$catalog=gca_provider_catalog();
     $available=$checks['purposes']['outcome']!=='unavailable';
-    foreach(array_unique($serviceIds) as $id){if(!isset($catalog[$id]))continue;$p=$catalog[$id];$found=preg_match($p[3],$text,$m);$out['services'][]=['id'=>$id,'name'=>$p[0],'status'=>!$available?'unknown':($found?'pass':'warning'),'source_url'=>$url,'evidence'=>!$available?'Dokument nebyl dostupný pro kontrolu zmínky o službě.':($found?'V dokumentaci nalezena zmínka: '.$m[0]:'Služba nalezena ve zdroji webu, v kontrolované cookie dokumentaci nenalezena.')];}
-    foreach($cookies as $c)$out['cookies'][]=['name'=>$c['name'],'status'=>!$available?'unknown':(in_array($c['name'],$names,true)?'pass':'warning')];
+    foreach(array_unique($serviceIds) as $id){if(!isset($catalog[$id]))continue;$p=$catalog[$id];$found=preg_match($p[3],$text,$m);$out['services'][]=['id'=>$id,'name'=>$p[0],'status'=>!$available?'unknown':($found?'pass':'error'),'source_url'=>$url,'evidence'=>!$available?'Dokument nebyl dostupný pro kontrolu zmínky o službě.':($found?'V dokumentaci nalezena zmínka: '.$m[0]:'Služba nalezena ve zdroji webu, v kontrolované cookie dokumentaci nenalezena.')];}
+    foreach($cookies as $c)$out['cookies'][]=['name'=>$c['name'],'status'=>!$available?'unknown':(in_array($c['name'],$names,true)?'pass':'error')];
     return $out;
 }
 function gca_analyze_policy_documents($documents,$serviceIds=[],$cookies=[]){
@@ -75,7 +75,7 @@ function gca_analyze_policy_documents($documents,$serviceIds=[],$cookies=[]){
     $priority=['unavailable'=>0,'missing'=>1,'not_detected'=>2,'found'=>3,'conflict'=>4];
     foreach($results as $result){
         foreach($result['checks'] as $id=>$check){$old=$out['checks'][$id];if($priority[$check['outcome']]>$priority[$old['outcome']])$out['checks'][$id]=$check;}
-        foreach(['services','cookies'] as $type)foreach($result[$type] as $i=>$entry)if($entry['status']==='pass'||(($out[$type][$i]['status']??'unknown')==='unknown'&&$entry['status']==='warning'))$out[$type][$i]=$entry;
+        foreach(['services','cookies'] as $type)foreach($result[$type] as $i=>$entry)if($entry['status']==='pass'||(($out[$type][$i]['status']??'unknown')==='unknown'&&in_array($entry['status'],['warning','error'],true)))$out[$type][$i]=$entry;
     }
     foreach($out['checks'] as &$check){
         $check['documents_checked']=$checked;

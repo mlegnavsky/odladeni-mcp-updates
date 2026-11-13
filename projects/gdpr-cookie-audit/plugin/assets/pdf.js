@@ -8,7 +8,7 @@ function buildPdf(report){
  function footer(){doc.setFontSize(8);doc.setTextColor(...colors.muted);doc.text('GDPR-COOKIES.CZ  /  Technická zpráva  /  '+page,16,286);doc.text('Automatická kontrola není právní certifikací.',16,291);}
  function space(h){if(y+h>274){footer();doc.addPage();page++;y=22;}}
  function text(t,size=10,color='ink',gap=4){doc.setFont('GCA','normal');doc.setFontSize(size);doc.setTextColor(...(colors[color]||colors.ink));const lines=doc.splitTextToSize(String(t||''),178);for(const line of lines){space(size*.45+gap);doc.text(line,16,y);y+=size*.45+1;}y+=gap;}
- function title(t){space(18);y+=5;text(t,16,'ink',5);}
+ function title(t){space(40);y+=5;text(t,16,'ink',5);}
  function rule(){space(5);doc.setDrawColor(220,229,237);doc.line(16,y,194,y);y+=7;}
  doc.setProperties({title:'Kontrola cookies — '+report.url,subject:'Technická kontrola veřejných stránek a zásad cookies',author:'GDPR-Cookies.cz',creator:'GDPR Cookies Audit'});
  text('GDPR COOKIES / ZPRÁVA O KONTROLE',9,'blue',8);
@@ -18,6 +18,10 @@ function buildPdf(report){
  text('Stav: '+({complete:'zdrojová kontrola dokončena',partial:'částečný výsledek',failed:'kontrolu se nepodařilo provést',running:'nedokončená kontrola'}[report.state]||report.state),10,'muted');
  text('Rozsah: '+(report.pages||[]).length+' načtených stránek, '+s.cookiePolicies.length+' dokumentů. Verze metodiky 1.1.',10,'muted');
  rule();
+ const score=s.documentationScore;
+ text('Skóre cookie dokumentace: '+(score.percent===null?'nedokončeno':score.percent+' %'),21,'blue',5);
+ text('Splněné položky: '+score.passed+' z '+score.total+'. Každá položka má stejnou váhu.',10,'ink',4);
+ text('Procento hodnotí dostupné cookie dokumenty. Nehodnotí barevnost ani skutečné chování lišty a není procentem právního souladu webu.',9,'muted',6);
  text('Kontrola cookies a cookie lišty',14,'ink');
  text(s.scenarios.length?'Zpráva spojuje kontrolu cookie dokumentace, zdrojů a uvedených skutečně provedených prohlížečových scénářů. Výsledek platí pro testované stránky a dobu pozorování.':'Zpráva vychází z HTTP odpovědí a zdroje stránek. Prohlížečové scénáře nebyly provedeny. Nalezená integrace neprokazuje její spuštění ani porušení pravidel.',10,'muted',8);
  text('Rozsah se týká pouze cookies. Obecné zásady ochrany osobních údajů nejsou předmětem tohoto měřáku.',9,'muted',6);
@@ -43,6 +47,9 @@ function buildPdf(report){
  title('Dokumentace cookies');
  if(!s.cookiePolicies.length)text('Dokumentaci se nepodařilo automaticky ověřit. Viz doporučení v nálezech.');
  s.cookiePolicies.forEach(p=>{(p.documents||[{url:p.url}]).forEach(d=>text(d.url,10,'blue'));Object.values(p.checks||{}).forEach(c=>{text(c.label+' — '+root.GCAModel.policyOutcomeLabel(c),10);text(c.evidence,9,'muted');if(c.source_url)text('Zdroj: '+c.source_url,8,'blue');if(c.status!=='pass'&&c.recommendation)text('Doporučená úprava: '+c.recommendation,9,'muted');});(p.services||[]).forEach(c=>{text(c.name+' — '+(c.status==='pass'?'zmínka nalezena':'zmínka nenalezena'),10);text(c.evidence,9,'muted');});});
+ title('Rozpis procentuálního hodnocení dokumentace');
+ text('Šest základních kontrol textu a navíc popis každé nalezené služby a cookie. Každá položka: 1 bod při splnění, 0 při chybě. Procento = splněné / všechny položky × 100, zaokrouhleno. Hodnota 100 % patří pouze úplnému splnění všech položek. Nedostupné části brání dokončení hodnocení.',9,'muted');
+ score.criteria.forEach(c=>text((c.status==='pass'?'1 / 1':c.status==='unknown'?'Nedostupné':'0 / 1')+' | '+c.label+' | '+root.GCAModel.policyOutcomeLabel(c),9,c.status));
  title('Podrobné nálezy a doporučené kroky');
  s.findings.forEach((f,i)=>{space(24);text((i+1)+'. '+f.title,12,f.status);text(labels[f.status],8,f.status);text('Zjištění: '+f.evidence,9);text('Doporučení: '+f.fix,9,'muted');if(f.url)text('Stránka: '+f.url,8,'blue');rule();});
  title('Prohlížečové scénáře');

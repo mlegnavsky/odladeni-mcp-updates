@@ -37,13 +37,13 @@ check($p['checks']['retention']['status'] === 'pass', 'policy retention evidence
 check($p['checks']['withdrawal']['status'] === 'pass', 'policy withdrawal evidence');
 check($p['services'][0]['status'] === 'pass', 'policy provider mention');
 $empty=gca_analyze_policy('https://example.com/cookies', '<main>Cookies</main>', ['meta']);
-check($empty['checks']['retention']['status'] === 'warning', 'missing text not definite legal breach');
-check($empty['services'][0]['status'] === 'warning', 'missing service statement');
+check($empty['checks']['retention']['status'] === 'error', 'missing text not definite legal breach');
+check($empty['services'][0]['status'] === 'error', 'missing service statement');
 $generic=gca_analyze_policy('https://example.com/cookies','<p>Cookies mají dobu platnosti. Používáním stránky souhlasíte s cookies.</p>');
-check($generic['checks']['retention']['status']==='warning','generic lifetime heading is not actual lifetime evidence');
-check($generic['checks']['implied_consent']['status']==='warning','implied consent wording is highlighted');
+check($generic['checks']['retention']['status']==='error','generic lifetime heading is not actual lifetime evidence');
+check($generic['checks']['implied_consent']['status']==='error','implied consent wording is highlighted');
 $negated=gca_analyze_policy('https://example.com/cookies','<p>Pokračováním v prohlížení webu neudělujete souhlas s volitelnými cookies.</p>');
-check($negated['checks']['implied_consent']['status']!=='warning','negated implied-consent statement is not a violation');
+check($negated['checks']['implied_consent']['status']!=='error','negated implied-consent statement is not a violation');
 $inventory=gca_analyze_policy('https://example.com/cookies','<p>Analytická cookie _ga má platnost 12 měsíců.</p>',[],[['name'=>'_ga']]);
 check($inventory['checks']['inventory']['status']==='pass','specific cookie inventory evidence');
 $redirected=gca_fetch('https://example.com/',function($url){

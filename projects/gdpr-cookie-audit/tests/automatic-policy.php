@@ -45,4 +45,6 @@ $p=gca_analyze_policy('https://example.com/cookies/','<main id="app"></main><scr
 check($p['checks']['implied_consent']['outcome']==='unavailable','empty JavaScript-only document is unavailable');
 $p=gca_analyze_policy('https://example.com/cookies/','<p>Prohlížeč Google Chrome umožňuje nastavení cookies.</p>',['google-tags','youtube','maps','clarity']);
 check(count(array_filter($p['services'],fn($s)=>$s['status']==='pass'))===0,'generic provider name does not document a specific measured service');
+$p=gca_analyze_policy('https://example.com/cookies/','<p>Cookies mají různé účely. Používáním webu souhlasíte s cookies.</p>');
+check($p['checks']['retention']['status']==='error'&&$p['checks']['implied_consent']['status']==='error','missing documentation and conflicting wording are concrete document defects');
 echo "ALL AUTOMATIC POLICY TESTS PASSED\n";

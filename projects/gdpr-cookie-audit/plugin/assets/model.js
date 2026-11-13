@@ -18,9 +18,31 @@
   scenarios.forEach(x=>findings.push({id:'dynamic-'+x.id,status:x.status==='not_applicable'?'pass':x.status,title:x.title,evidence:x.evidence||x.reason||'Bez dalšího důkazu.',fix:x.fix||'Výsledek se vztahuje k uvedenému scénáři, prohlížeči a době pozorování.',url:report.url}));
   if(!scenarios.length)findings.push({id:'browser-unavailable',status:'unknown',title:'Prohlížečové měření nebylo provedeno',evidence:report.browser?.reason||'V tomto měření nebyl spuštěn interaktivní prohlížeč. Z výsledků nelze vyvozovat, jak web respektuje souhlas.',fix:'Pro ověření chování lišty a cookies je potřeba prohlížečové měření.',url:report.url});
   if(pages.length)findings.push({id:'coverage',status:'pass',title:'Veřejné stránky byly načteny',evidence:'Úspěšně načtených HTML stránek: '+pages.length+'. Rozsah najdete v přehledu stránek.',fix:'Výsledek platí pro uvedené adresy a čas kontroly.',url:report.url});
-  return {services,cookies,scenarios,cookiePolicies:policies,findings,errors:findings.filter(x=>x.status==='error').length,warnings:findings.filter(x=>x.status==='warning').length,passed:findings.filter(x=>x.status==='pass').length,unknown:findings.filter(x=>x.status==='unknown').length};
+  return {documentationScore:scoreDocumentation(report,policies),services,cookies,scenarios,cookiePolicies:policies,findings,errors:findings.filter(x=>x.status==='error').length,warnings:findings.filter(x=>x.status==='warning').length,passed:findings.filter(x=>x.status==='pass').length,unknown:findings.filter(x=>x.status==='unknown').length};
+ }
+ function scoreDocumentation(report,policies){
+  const criteria=[],ids=['purposes','retention','withdrawal','choice','inventory','implied_consent'];
+  const labels={purposes:'Účely používání cookies',retention:'Platnost a životnost cookies',withdrawal:'Změna a odvolání souhlasu',choice:'Odmítnutí volitelných cookies',inventory:'Přehled konkrétních cookies',implied_consent:'Formulace souhlasu pouhou návštěvou'};
+  const rank={conflict:4,found:3,not_detected:3,missing:2,unavailable:0};
+  for(const id of ids){
+   const candidates=policies.map(p=>p.checks?.[id]).filter(Boolean).sort((a,b)=>(rank[b.outcome]??(b.status==='pass'?3:1))-(rank[a.outcome]??(a.status==='pass'?3:1)));
+   const c=candidates[0]||{status:'unknown',outcome:'unavailable',evidence:'Obsah dokumentace nebyl dostupný pro tuto kontrolu.'};
+   criteria.push({...c,id,label:c.label||labels[id]});
+  }
+  for(const type of ['services','cookies']){
+   const seen=new Map();
+   for(const p of policies)for(const entry of p[type]||[]){const key=entry.id||entry.name;const old=seen.get(key);if(!old||entry.status==='pass'||(old.status==='unknown'&&['warning','error'].includes(entry.status)))seen.set(key,entry);}
+   for(const [key,c] of seen)criteria.push({...c,id:type+'-'+key,label:(type==='services'?'Popis služby: ':'Popis cookie: ')+c.name,outcome:c.status==='pass'?'found':c.status==='unknown'?'unavailable':'missing'});
+  }
+  const unavailableDocuments=new Map();
+  for(const p of policies)for(const d of p.documents||[])if(d.available===false||d.text_truncated)unavailableDocuments.set(d.url,{url:d.url,message:d.text_truncated?'Text dokumentu překročil limit kontroly.':'Text dokumentu nebyl dostupný.'});
+  for(const e of (report.errors||[]).filter(e=>e.kind==='policy'))unavailableDocuments.set(e.url,e);
+  for(const [url,error] of unavailableDocuments)criteria.push({id:'document-load-'+url,label:'Dostupnost celého dokumentu: '+url,status:'unknown',outcome:'unavailable',evidence:error.message});
+  const passed=criteria.filter(c=>c.status==='pass').length,unavailable=criteria.filter(c=>!['pass','warning','error'].includes(c.status)).length;
+  const complete=['complete','partial'].includes(report.state)&&policies.length>0&&unavailable===0;
+  return {scope:'documentation',percent:complete?(passed===criteria.length?100:Math.min(99,Math.round(passed/criteria.length*100))):null,passed,total:criteria.length,unavailable,criteria};
  }
  function csvCell(v){v=String(v??'');if(/^[=+@\-\t\r]/.test(v))v="'"+v;return '"'+v.replaceAll('"','""')+'"';}
- function policyOutcomeLabel(c){return ({found:'Nalezeno v dokumentaci',missing:'Nenalezeno v dokumentaci',conflict:'Rozporná formulace',not_detected:'Problematická formulace nenalezena',unavailable:'Dokument nedostupný'})[c.outcome]||(c.status==='pass'?'Nalezeno v textu':'Automaticky nerozpoznáno');}
+ function policyOutcomeLabel(c){return ({found:'Nalezeno v dokumentaci',missing:'Chybí v dostupné dokumentaci',conflict:'Rozporná formulace',not_detected:'Problematická formulace nenalezena',unavailable:'Dokument nedostupný'})[c.outcome]||(c.status==='pass'?'Nalezeno v textu':'Automaticky nerozpoznáno');}
  root.GCAModel={summarize,csvCell,policyOutcomeLabel};
 })(typeof window!=='undefined'?window:globalThis);

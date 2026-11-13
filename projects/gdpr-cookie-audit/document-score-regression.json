@@ -1,0 +1,23 @@
+{
+  "version": "1.5.2",
+  "url": "https://www.stranapro.cz/",
+  "finished_at": "2026-11-13T13:16:05+00:00",
+  "score": {
+    "scope": "documentation",
+    "percent": 38,
+    "passed": 3,
+    "total": 8
+  },
+  "verification": {
+    "score_in_pdf": true,
+    "numerator_denominator": true,
+    "detailed_breakdown": true,
+    "no_manual_prompt": true,
+    "missing_label": true,
+    "pdf_pages": 7,
+    "state": "complete",
+    "all_pages_http200": true
+  },
+  "ui_verified_version": "1.5.1",
+  "pdf_layout_verified_version": "1.5.2"
+}
