@@ -34,3 +34,10 @@ test('external documentation integrations do not become audited-site trackers',(
  const s=model.summarize({pages:[{url:'https://example.com/',is_target:true,services:[],cookies:[]},{url:'https://external.com/privacy',is_target:false,services:[{id:'meta'}],cookies:[{name:'external',domain:'external.com'}]}],policies:[],errors:[]});
  assert.equal(s.services.length,0);assert.equal(s.cookies.length,0);
 });
+test('automatic documentation findings preserve outcome, source and specific recommendation',()=>{
+ const r=model.summarize({url:'https://example.com/',pages:[],policies:[{url:'https://example.com/cookies/',checks:{retention:{label:'Platnost',status:'warning',outcome:'missing',source_url:null,evidence:'Nenalezeno ve dvou dokumentech.',recommendation:'Doplňte životnost každé cookie.'},withdrawal:{label:'Odvolání',status:'pass',outcome:'found',source_url:'https://example.com/tabulka-cookies/',evidence:'Změňte souhlas v nastavení.'}}}]});
+ assert.equal(r.findings.find(f=>f.id==='policy-0-retention').fix,'Doplňte životnost každé cookie.');
+ assert.equal(r.findings.find(f=>f.id==='policy-0-withdrawal').url,'https://example.com/tabulka-cookies/');
+ assert.equal(model.policyOutcomeLabel({outcome:'missing'}),'Nenalezeno v dokumentaci');
+ assert.equal(model.policyOutcomeLabel({outcome:'conflict'}),'Rozporná formulace');
+});

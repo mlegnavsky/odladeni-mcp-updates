@@ -82,3 +82,40 @@ No scanner result is labeled as browser-verified. Source/policy auditing remains
 Independent review found no critical issue. Canonicalized real paths now protect runtime storage
 against public-root symlinks; additional native libraries were identified through actual ldd output.
 Remaining discovery limitation: nonstandard cookie-document labels may require manual URL input.
+
+
+## Automatic cookie document assessment — 2026-11-13
+
+User requested automatic cookie-policy checking rather than generic manual-verification prompts.
+Deployed version 1.4.1 to gdpr-cookies.cz only. Release SHA256:
+1f5ebe1293e27d360434abf87fc822c212619f20af0626b67615ba490bc0c306.
+Backup before final update: 2775764611de078f2d0c36041155a82f.
+
+Implementation: preserve document blocks/table rows, discover nested cookie documents within the
+existing five-page cap, combine evidence across documents with exact source URLs. Checks distinguish
+found/missing/conflicting text and unavailable content. Missing information gets a specific editing
+recommendation in UI/PDF. Generic provider names no longer prove documentation of a specific service.
+No website content is rewritten by scanning. No browser runtime or system permissions changed.
+
+Regression suite: 23 automatic-policy assertions, 56 core assertions, 9 runtime assertions,
+7 WordPress adapter assertions, 15 Node tests all passing. PHP/JS lint and git diff whitespace check pass.
+Independent review identified three important groups; each reproduced RED then fixed and verified:
+- General files/GDPR consent incorrectly counted as cookie evidence: narrower context and explicit exclusions.
+- Legitimate negative consent wording erased instructions: negation attached to prohibited action only.
+- Unavailable/empty documents became positive absence checks: availability/coverage now prevent passing them.
+Additional regression: session in a cookie name is not lifetime evidence; redirected roots deduplicate;
+long evidence stays bounded around the match; provider Google alone cannot prove YouTube/Maps/Analytics.
+
+Public UI final regression started 2026-11-13T12:44:49Z (13:44:49 Europe/Prague): five pages completed,
+zero fetch errors; rules at /pravidla-cookies/ auto-discovered. Positive purpose/rejection evidence,
+missing lifetime/withdrawal/inventory information, implied-consent conflict, YouTube source/document
+mismatch. UI uses exact outcome labels and recommendations, no 'Ověřit ručně' prompt. Real six-page
+PDF downloaded, parsed and checked for outcome labels, recommendations, cookie-only scope and no
+manual-verification prompt. Sanitized evidence summary: automatic-policy-regression.json.
+
+Limits remain explicit: deterministic language rules identify evidence in at most 150kB text per cookie
+document; missing information is scoped to inspected accessible content, not asserted as a legal breach.
+Empty/blocked/incomplete documents cannot produce a passing absence result. Interactive cookie actions,
+JS storage and banner screenshots still require a working isolated browser host; the existing hosting
+continues to block Chromium sandbox (confirmed before this change). This release automates document
+assessment, not end-to-end consent scenarios or a complete legal certification.

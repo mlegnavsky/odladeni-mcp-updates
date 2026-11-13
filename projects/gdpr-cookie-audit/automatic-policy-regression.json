@@ -1,0 +1,69 @@
+{
+  "plugin_version": "1.4.1",
+  "url": "https://www.stranapro.cz/",
+  "finished_at": "2026-11-13T12:44:53+00:00",
+  "state": "complete",
+  "pages": [
+    {
+      "url": "https://www.stranapro.cz/",
+      "status": 200,
+      "kind": "page"
+    },
+    {
+      "url": "https://www.stranapro.cz/pravidla-cookies/",
+      "status": 200,
+      "kind": "policy"
+    },
+    {
+      "url": "https://www.stranapro.cz/napiste-nam-prispevek/",
+      "status": 200,
+      "kind": "page"
+    },
+    {
+      "url": "https://www.stranapro.cz/registrovany-podporovatel/",
+      "status": 200,
+      "kind": "page"
+    },
+    {
+      "url": "https://www.stranapro.cz/chci-se-stat-clenem-pro/",
+      "status": 200,
+      "kind": "page"
+    }
+  ],
+  "checks": {
+    "purposes": {
+      "outcome": "found",
+      "source_url": "https://www.stranapro.cz/pravidla-cookies/"
+    },
+    "retention": {
+      "outcome": "missing",
+      "source_url": null
+    },
+    "withdrawal": {
+      "outcome": "missing",
+      "source_url": null
+    },
+    "choice": {
+      "outcome": "found",
+      "source_url": "https://www.stranapro.cz/pravidla-cookies/"
+    },
+    "inventory": {
+      "outcome": "missing",
+      "source_url": null
+    },
+    "implied_consent": {
+      "outcome": "conflict",
+      "source_url": "https://www.stranapro.cz/pravidla-cookies/"
+    }
+  },
+  "pdf_verification": {
+    "report_complete": true,
+    "pages": 5,
+    "no_load_errors": true,
+    "cookie_document": "https://www.stranapro.cz/pravidla-cookies/",
+    "manual_prompt_absent": true,
+    "automatic_outcomes_in_pdf": true,
+    "cookies_only": true,
+    "pdf_pages": 6
+  }
+}

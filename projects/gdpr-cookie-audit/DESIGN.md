@@ -38,3 +38,7 @@ services, exposed debugging port, authentication changes, or disabled sandbox. B
 triggered only by authorized plugin activation; public scan requests cannot install software.
 If dependencies or sandbox are unavailable, preserve accurate partial reporting and expose
 the concrete blocker rather than fabricated results.
+
+## Approved refinement: automatic cookie document checks
+
+User requests no manual-verification step in cookie document results. Implement automatic discovery of linked cookie documents, context-aware comparison across their texts and explicit outcomes: information found, information not found in inspected documents, conflicting wording, runtime test unavailable. Every found/conflicting result carries the actual source URL/excerpt; missing information carries a concrete editing recommendation. A scan must never claim that an absent phrase proves a legal violation or that reading instructions proves actual consent behavior. Existing five-page cap, private-network restrictions, short report retention and cookie-only scope remain.
